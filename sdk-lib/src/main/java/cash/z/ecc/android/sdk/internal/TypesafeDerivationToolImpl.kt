@@ -113,22 +113,22 @@ internal class TypesafeDerivationToolImpl(private val derivation: Derivation) : 
         )
     )
 
-    override suspend fun encryptVerusMessage(
+    override suspend fun encryptVerusData(
         address: String,
         message: String,
         returnSsk: Boolean
     ): EncryptedPayload {
         // These parameters don't need conversion, so we just pass them through.
-        return derivation.encryptVerusMessage(address, message, returnSsk)
+        return derivation.encryptVerusData(address, message, returnSsk)
     }
 
-    override suspend fun decryptVerusMessage(
-        fvkHex: String?,
+    override suspend fun decryptVerusData(
+        ivkBytes: String?,
         epkHex: String?,
         ciphertextHex: String,
         sskHex: String?
     ): String {
         // These parameters also don't need conversion, so we just pass them through.
-        return derivation.decryptVerusMessage(fvkHex, epkHex, ciphertextHex, sskHex)
+        return derivation.decryptVerusData(ivkBytes, epkHex, ciphertextHex, sskHex)
     }
 }

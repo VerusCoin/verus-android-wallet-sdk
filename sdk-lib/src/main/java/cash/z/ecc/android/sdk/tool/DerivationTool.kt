@@ -184,7 +184,7 @@ interface DerivationTool {
      * @param returnSsk If true, the symmetric key used for encryption will be returned in the payload. Defaults to false.
      * @return An [EncryptedPayload] containing the ciphertext and public key material.
      */
-    suspend fun encryptVerusMessage(
+    suspend fun encryptVerusData(
         address: String,
         message: String,
         returnSsk: Boolean = false
@@ -199,8 +199,8 @@ interface DerivationTool {
      * @param sskHex The hex-encoded symmetric session key. If provided, fvkHex and epkHex are ignored.
      * @return The decrypted plaintext message as a String.
      */
-    suspend fun decryptVerusMessage(
-        fvkHex: String?,
+    suspend fun decryptVerusData(
+        ivkBytes: String?,
         epkHex: String?,
         ciphertextHex: String,
         sskHex: String?

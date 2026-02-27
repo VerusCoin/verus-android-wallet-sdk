@@ -7,8 +7,8 @@ authors = [
 ]
 description = "JNI backend for the Android wallet SDK"
 publish = false
-edition = "2018"
-rust-version = "1.77"
+edition = "2024"
+rust-version = "1.93.1"
 
 [dependencies]
 hdwallet = "0.4"
@@ -34,7 +34,6 @@ zcash_note_encryption = "0.4.1"
 jubjub = "0.10"
 verus_zfunc = { version = "0.1.0", default-features = false }
 
-
 # Initialization
 rayon = "1.7"
 
@@ -53,6 +52,7 @@ dlopen2 = "0.7"
 libc = "0.2"
 chacha20poly1305 = "0.10.1"
 getrandom = "0.2.16"
+zcash_keys = "0.6.1"
 # Uncomment this to use orchard-specific functions
 [features]
 orchard = []
@@ -76,7 +76,7 @@ zcash_proofs = { git = "https://github.com/who-biz/librustzcash", branch = "ka_a
 sapling-crypto = { git = "https://github.com/who-biz/sapling-crypto", branch = "ka_agree" }
 zcash_note_encryption = { git = "https://github.com/who-biz/zcash_note_encryption", branch = "ka_agree" }
 orchard = { git = "https://github.com/who-biz/orchard", branch = "ka_agree" }
-verus_zfunc = { git = "https://github.com/who-biz/librustzcash", branch = "ka_agree-security-fixes" }
+verus_zfunc = { git = "https://github.com/iamahmedshahh/librustzcash", branch = "ka_agree-security-fixes" }
 
 
 

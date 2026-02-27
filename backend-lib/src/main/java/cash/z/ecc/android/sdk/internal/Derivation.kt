@@ -96,14 +96,14 @@ interface Derivation {
         returnSecret: Boolean
     ): JniChannelKeys
 
-    fun encryptVerusMessage(
+    fun encryptVerusData(
         addressString: String,
         message: String,
         returnSsk: Boolean
     ): EncryptedPayload
 
-    fun decryptVerusMessage(
-        dfvkHex: String?,
+    fun decryptVerusData(
+        ivkBytes: ByteArray?,
         ephemeralPublicKeyHex: String?,
         ciphertextHex: String,
         symmetricKeyHex: String?

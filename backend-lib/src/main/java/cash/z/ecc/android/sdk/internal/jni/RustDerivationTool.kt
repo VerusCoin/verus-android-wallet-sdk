@@ -108,18 +108,18 @@ class RustDerivationTool private constructor() : Derivation {
         returnSecret: Boolean
     ): JniChannelKeys = zGetEncryptionAddress(seed, spendingKey, hdIndex, encryptionIndex, fromId, toId, returnSecret)
 
-    override fun encryptVerusMessage(
+    override fun encryptVerusData(
         addressString: String,
         message: String,
         returnSsk: Boolean
-    ): EncryptedPayload = encryptMessage(addressString, message, returnSsk)
+    ): EncryptedPayload = encryptData(addressString, message, returnSsk)
 
-    override fun decryptVerusMessage(
+    override fun decryptVerusData(
         dfvkHex: String?,
         ephemeralPublicKeyHex: String?,
         ciphertextHex: String,
         symmetricKeyHex: String?
-    ): String = decryptMessage(dfvkHex, ephemeralPublicKeyHex, ciphertextHex, symmetricKeyHex)
+    ): String = decryptData(dfvkHex, ephemeralPublicKeyHex, ciphertextHex, symmetricKeyHex)
 
     companion object {
         suspend fun new(): Derivation {
@@ -214,14 +214,14 @@ class RustDerivationTool private constructor() : Derivation {
         ): JniChannelKeys
 
         @JvmStatic
-        private external fun encryptMessage(
+        private external fun encryptData(
             addressString: String,
             message: String,
             returnSsk: Boolean
         ): EncryptedPayload
 
         @JvmStatic
-        private external fun decryptMessage(
+        private external fun decryptData(
             dfvkHex: String?,
             ephemeralPublicKeyHex: String?,
             ciphertextHex: String,

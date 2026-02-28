@@ -109,17 +109,17 @@ class RustDerivationTool private constructor() : Derivation {
     ): JniChannelKeys = zGetEncryptionAddress(seed, spendingKey, hdIndex, encryptionIndex, fromId, toId, returnSecret)
 
     override fun encryptVerusData(
-        addressString: String,
-        message: String,
+        addressString: ByteArray, // This can be a byte array, is of type  SaplingPaymentAddress in encryptResponseToAddress, we can use fromBuffer method
+        data: ByteArray,
         returnSsk: Boolean
-    ): EncryptedPayload = encryptData(addressString, message, returnSsk)
+    ): EncryptedPayload = encryptData(addressString, data, returnSsk)
 
     override fun decryptVerusData(
-        dfvkHex: String?,
-        ephemeralPublicKeyHex: String?,
-        ciphertextHex: String,
-        symmetricKeyHex: String?
-    ): String = decryptData(dfvkHex, ephemeralPublicKeyHex, ciphertextHex, symmetricKeyHex)
+        ivkBytes: ByteArray?,
+        ephemeralPublicKeyBytes: ByteArray?,
+        dataToDecrypt: ByteArray,
+        symmetricKeyBytes: ByteArray?
+    ): ByteArray = decryptData(ivkBytes, ephemeralPublicKeyBytes, dataToDecrypt, symmetricKeyBytes)
 
     companion object {
         suspend fun new(): Derivation {
@@ -215,17 +215,17 @@ class RustDerivationTool private constructor() : Derivation {
 
         @JvmStatic
         private external fun encryptData(
-            addressString: String,
-            message: String,
+            addressString: ByteArray,
+            data: ByteArray,
             returnSsk: Boolean
         ): EncryptedPayload
 
         @JvmStatic
         private external fun decryptData(
-            dfvkHex: String?,
-            ephemeralPublicKeyHex: String?,
-            ciphertextHex: String,
-            symmetricKeyHex: String?
-        ): String
+            ivkHex: ByteArray?,
+            ephemeralPublicKeyHex: ByteArray?,
+            ciphertextHex: ByteArray,
+            symmetricKeyHex: ByteArray?
+        ): ByteArray
     }
 }

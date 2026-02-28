@@ -185,26 +185,26 @@ interface DerivationTool {
      * @return An [EncryptedPayload] containing the ciphertext and public key material.
      */
     suspend fun encryptVerusData(
-        address: String,
-        message: String,
+        address: ByteArray,
+        encryptedData: ByteArray,
         returnSsk: Boolean = false
     ): EncryptedPayload
 
     /**
      * Decrypts a Verus-specific encrypted message.
      *
-     * @param fvkHex The recipient's hex-encoded full viewing key. Not needed if sskHex is provided.
-     * @param epkHex The sender's hex-encoded ephemeral public key. Not needed if sskHex is provided.
-     * @param ciphertextHex The hex-encoded encrypted message.
-     * @param sskHex The hex-encoded symmetric session key. If provided, fvkHex and epkHex are ignored.
+     * @param ivkBytes The sender's ivkBytes. Not needed if sskBytes is provided.
+     * @param ephemeralPublicKey The ephemeral public key bytes included in the encrypted payload.
+     * @param encryptedData The encrypted data bytes.
+     * @param sskBytes The symmetric session key bytes. If provided, ivkBytes and epkBytes are ignored.
      * @return The decrypted plaintext message as a String.
      */
     suspend fun decryptVerusData(
-        ivkBytes: String?,
-        epkHex: String?,
-        ciphertextHex: String,
-        sskHex: String?
-    ): String
+        ivkBytes: ByteArray?,
+        epkBytes: ByteArray?,
+        encryptedData: ByteArray,
+        sskBytes: ByteArray?
+    ): ByteArray
 
     companion object {
         const val DEFAULT_NUMBER_OF_ACCOUNTS = Derivation.DEFAULT_NUMBER_OF_ACCOUNTS

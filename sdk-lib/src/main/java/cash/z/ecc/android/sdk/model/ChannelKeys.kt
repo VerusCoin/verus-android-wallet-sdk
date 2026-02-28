@@ -12,7 +12,7 @@ import cash.z.ecc.android.sdk.internal.model.JniChannelKeys
  * The underlying byte encodings are unstable and MUST NOT be exposed to users.
  */
 class ChannelKeys private constructor(
-    val address: String,
+    val address: BytesArray,
 
     private val extendedFullViewingKeyBytes: FirstClassByteArray,
 

@@ -115,33 +115,33 @@ fun Derivation.getVerusEncryptionAddress(
     hdIndex: Int,
     encryptionIndex: Int,
     returnSecret: Boolean
-): ChannelKeys = ChannelKeys(getVerusEncryptionAddress(
-        seed = seed,
-        spendingKey = spendingKey,
-        hdIndex = hdIndex,
-        encryptionIndex = encryptionIndex,
-        fromId = fromId,
-        toId = toId,
-        returnSecret = returnSecret
+): ChannelKeys { return getVerusEncryptionAddress(
+        seed,
+        spendingKey,
+        hdIndex,
+        encryptionIndex,
+        fromId,
+        toId,
+        returnSecret
     )
-)
+]}
 
 
 fun Derivation.encryptMessage(
-    address: String,
-    message: String,
+    address: ByteArray,
+    data: ByteArray,
     returnSsk: Boolean
 ): EncryptedPayload {
-    return encryptVerusMessage(address, message, returnSsk)
+    return encryptVerusData(address, data, returnSsk)
 }
 
 fun Derivation.decryptMessage(
     params: DecryptParams
-): String {
-    return decryptVerusMessage(
-        dfvkHex = params.dfvkHex,
-        ephemeralPublicKeyHex = params.ephemeralPublicKeyHex,
-        ciphertextHex = params.ciphertextHex,
-        symmetricKeyHex = params.symmetricKeyHex
+): ByteArray {
+    return decryptVerusData(
+        params.ivkBytes,
+        params.ephemeralPublicKey,
+        params.encryptedData,
+        params.symmetricKeyBytes
     )
 }

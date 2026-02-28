@@ -5,6 +5,7 @@ import cash.z.ecc.android.sdk.internal.model.JniShieldedSpendingKey
 import cash.z.ecc.android.sdk.internal.model.JniSharedSecret
 import cash.z.ecc.android.sdk.internal.model.JniChannelKeys
 import cash.z.ecc.android.sdk.model.EncryptedPayload
+import cash.z.ecc.android.sdk.model.ChannelKeys
 
 interface Derivation {
     fun deriveUnifiedAddress(
@@ -94,20 +95,20 @@ interface Derivation {
         fromId: ByteArray?,
         toId: ByteArray?,
         returnSecret: Boolean
-    ): JniChannelKeys
+    ): ChannelKeys
 
     fun encryptVerusData(
-        addressString: String,
-        message: String,
+        addressString: ByteArray,
+        data: ByteArray,
         returnSsk: Boolean
     ): EncryptedPayload
 
     fun decryptVerusData(
         ivkBytes: ByteArray?,
-        ephemeralPublicKeyHex: String?,
-        ciphertextHex: String,
-        symmetricKeyHex: String?
-    ): String
+        ephemeralPublicKeyHex: ByteArray?,
+        dataToDecrypt: ByteArray,
+        symmetricKeyHex: ByteArray?
+    ): ByteArray
 
     companion object {
         const val DEFAULT_NUMBER_OF_ACCOUNTS = 1

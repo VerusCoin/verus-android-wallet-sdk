@@ -8,7 +8,7 @@ import androidx.annotation.Keep
  */
 @Keep
 class JniChannelKeys(
-    val address: String,
+    val address: ByteArray,
 
     val extendedFullViewingKeyBytes: ByteArray,
 

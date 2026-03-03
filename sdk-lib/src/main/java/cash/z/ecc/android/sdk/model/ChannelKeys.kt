@@ -12,7 +12,7 @@ import cash.z.ecc.android.sdk.internal.model.JniChannelKeys
  * The underlying byte encodings are unstable and MUST NOT be exposed to users.
  */
 class ChannelKeys private constructor(
-    val address: BytesArray,
+    private val address: FirstClassByteArray,
 
     private val extendedFullViewingKeyBytes: FirstClassByteArray,
 
@@ -21,20 +21,20 @@ class ChannelKeys private constructor(
     private val spendingKeyBytes: FirstClassByteArray? = null
 ) {
     internal constructor(jni: JniChannelKeys) : this(
-        address = jni.address,
+        address = FirstClassByteArray(jni.address.copyOf()),
         extendedFullViewingKeyBytes = FirstClassByteArray(jni.extendedFullViewingKeyBytes.copyOf()),
         internalViewingKeyBytes = FirstClassByteArray(jni.internalViewingKeyBytes.copyOf()),
         spendingKeyBytes = jni.spendingKeyBytes?.let { FirstClassByteArray(it.copyOf()) }
     )
 
     /* copy functions are for internal use only */
+    fun copyAddress(): ByteArray = address.byteArray.copyOf()
+
     fun copyExtendedFullViewingKeyBytes(): ByteArray = extendedFullViewingKeyBytes.byteArray.copyOf()
 
     fun copyInternalViewingKeyBytes(): ByteArray = internalViewingKeyBytes.byteArray.copyOf()
 
     fun copySpendingKeyBytes(): ByteArray? = spendingKeyBytes?.byteArray?.copyOf()
-
-    override fun toString(): String = "ChannelKeys(address=$address)"
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -60,7 +60,7 @@ class ChannelKeys private constructor(
 
     companion object {
         suspend fun new(
-            address: String,
+            address: ByteArray,
             extendedFullViewingKeyBytes: ByteArray,
             internalViewingKeyBytes: ByteArray,
             spendingKeyBytes: ByteArray? = null
@@ -76,7 +76,7 @@ class ChannelKeys private constructor(
                 // require(RustBackend.validateChannelKeys(address, xfvkCopy, ivkCopy, skCopy))
 
                 ChannelKeys(
-                    address = address,
+                    address = FirstClassByteArray(address),
                     extendedFullViewingKeyBytes = FirstClassByteArray(xfvkCopy),
                     internalViewingKeyBytes = FirstClassByteArray(ivkCopy),
                     spendingKeyBytes = skCopy?.let { FirstClassByteArray(it) }

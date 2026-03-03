@@ -376,10 +376,7 @@ pub fn encode_channel_keys<'a>(
     ivk_bytes: &Secret<[u8; 32]>,
 ) -> jni::errors::Result<JObject<'a>> {
 
-    // encode address to bech32 string and then to java string 
-    let address_str = address.encode(&MainNetwork);
-    let address_java = env.new_string(address_str)?;
-   
+    let address_java = env.byte_array_from_slice(&address.to_bytes())?;
 
     let fvk_java = env.byte_array_from_slice(extfvk_bytes.expose_secret().as_slice())?;
 
@@ -392,9 +389,9 @@ pub fn encode_channel_keys<'a>(
 
     Ok(env.new_object(
         "cash/z/ecc/android/sdk/internal/model/JniChannelKeys",
-        "(Ljava/lang/String;[B[B[B)V",
+        "(L[B[B[B[B)V",
         &[
-            JValue::Object(&address_java.into()),
+            JValue::Object(&address_java),
             JValue::Object(&fvk_java),
             JValue::Object(&ivk_java),
             JValue::Object(&sk_java),
@@ -965,7 +962,7 @@ pub extern "C" fn Java_cash_z_ecc_android_sdk_internal_jni_RustDerivationTool_ge
     unwrap_exc_or(&mut env, res, ptr::null_mut())
 }
 #[no_mangle]
-pub extern "C" fn Java_cash_z_ecc_android_sdk_internal_jni_RustDerivationTool_zGetEncryptionAddress<'local>(
+pub extern "C" fn Java_cash_z_ecc_android_sdk_internal_jni_RustDerivationTool_ZGetVEncryptionAddress<'local>(
     mut env: JNIEnv<'local>,
     _class: JObject<'local>,
     seed: JByteArray<'local>,
@@ -978,23 +975,24 @@ pub extern "C" fn Java_cash_z_ecc_android_sdk_internal_jni_RustDerivationTool_zG
 ) -> jobject {
     let res = catch_unwind(&mut env, |env| {
 
-        let _span = tracing::info_span!("RustDerivationTool.zGetEncryptionAddress").entered();
+        let _span = tracing::info_span!("RustDerivationTool.getVEncryptionAddress").entered();
 
-        if hd_index < -1 {
-            // -1 is valid here, because we pass this through as sentinel for None conversion, when we do not have 
-            // a meaningful index scenario (i.e. extsk-based derivation carries hdIndex with it inherently)
-            return Err(anyhow!("Invalid hd_index value! expected >= -1, actual {:?}", hd_index));
-        }
-        if encryption_index < 0 {
-            // conversely, -1 is not a valid argument here. encryption index is always meaningful in all contexts
-            return Err(anyhow!("Invalid hd_index value! expected >= -1, actual {:?}", hd_index));
-        }
+
+        let hd_index: Option<u32> = if hd_index < 0 {
+            None
+        } else {
+            Some(hd_index as u32)
+        };
+
+        let encryption_index: Option<u32> = if encryption_index < 0 {
+            None                        
+        } else {
+            Some(encryption_index as u32)  
+        };
 
         let seed = if seed.is_null() { None } else { Some(SecretVec::new(env.convert_byte_array(seed)?.into())) };
         let spending_key = if spending_key.is_null() { None } else { Some(single_copy_read_ext_key(env, &spending_key)?) };
-        let hd_index = if hd_index == -1 { None } else { Some(hd_index as u32) };   
-        let encryption_index = if encryption_index == -1 { None } else { Some(encryption_index as u32) };
-        let return_secret = { return_secret == JNI_TRUE };
+        let return_secret = return_secret == JNI_TRUE;
 
         let from_id_bytes: Option<[u8; 20]> = if from_id.is_null() { None } else {
             let v = env.convert_byte_array(from_id)?;
@@ -1034,16 +1032,16 @@ pub extern "C" fn Java_cash_z_ecc_android_sdk_internal_jni_RustDerivationTool_zG
 }
 
 #[no_mangle]
-pub extern "C" fn Java_cash_z_ecc_android_sdk_internal_jni_RustDerivationTool_encryptData<'local>(
+pub extern "C" fn Java_cash_z_ecc_android_sdk_internal_jni_RustDerivationTool_encryptVData<'local>(
         mut env: JNIEnv<'local>,
         _class: JObject<'local>,
-        address_bytes: JByteArray<'local>,
-        data_to_encrypt: JByteArray<'local>,
+        address_bytes: JByteArray,
+        data_to_encrypt: JByteArray,
         return_ssk: jboolean,
     ) -> jobject {
     let res = catch_unwind(&mut env, |env| {
         
-        let _span = tracing::info_span!("RustDerivationTool.encryptData").entered();
+        let _span = tracing::info_span!("RustDerivationTool.encryptVerusDataD").entered();
 
         // convert 43 bytes directly to PaymentAddress - no bech32 round trip
         let addr_bytes: [u8; 43] = env.convert_byte_array(&address_bytes)?
@@ -1072,7 +1070,7 @@ pub extern "C" fn Java_cash_z_ecc_android_sdk_internal_jni_RustDerivationTool_en
 
         let result_obj = env.new_object(
             "cash/z/ecc/android/sdk/model/EncryptedPayload",
-            "([B[B[B)V",
+            "L([B[B[B)V",
             &[
                 JValue::Object(&epk_java),
                 JValue::Object(&secretdata_java),
@@ -1087,17 +1085,17 @@ pub extern "C" fn Java_cash_z_ecc_android_sdk_internal_jni_RustDerivationTool_en
 }
 
 #[no_mangle]
-pub extern "C" fn Java_cash_z_ecc_android_sdk_internal_jni_RustDerivationTool_decryptData<'local>(
+pub extern "C" fn Java_cash_z_ecc_android_sdk_internal_jni_RustDerivationTool_decryptVData<'local>(
         mut env: JNIEnv<'local>,
         _class: JObject<'local>,
-        ivk_bytes: JByteArray, //ivk bytes
-        ephemeral_public_key_hex: JByteArray,   // epk bytes
-        data_bytes: JByteArray<'local>,             
+        ivk_bytes: JByteArray<'local>, //ivk bytes
+        ephemeral_public_key_hex: JByteArray<'local>,   // epk bytes
+        data_bytes: JByteArray,            
         symmetric_key_hex: JByteArray<'local>,          
     ) -> jbyteArray {
     let res = catch_unwind(&mut env, |env| {
         
-        let _span = tracing::info_span!("RustDerivationTool.decryptData").entered();
+        let _span = tracing::info_span!("RustDerivationTool.decryptVerusDataD").entered();
 
         // decode bech32 ivk string → 32 raw bytes and do checks
         let ivk: Option<Secret<[u8; 32]>> = if ivk_bytes.is_null() { None } else {

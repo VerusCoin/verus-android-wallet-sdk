@@ -11,6 +11,7 @@ import cash.z.ecc.android.sdk.model.ZcashNetwork
 import cash.z.ecc.android.sdk.tool.DerivationTool
 import cash.z.ecc.android.sdk.internal.ext.Hex
 import cash.z.ecc.android.sdk.model.EncryptedPayload
+import cash.z.ecc.android.sdk.internal.model.JniChannelKeys
 
 internal class TypesafeDerivationToolImpl(private val derivation: Derivation) : DerivationTool {
     override suspend fun deriveUnifiedFullViewingKeys(
@@ -97,12 +98,12 @@ internal class TypesafeDerivationToolImpl(private val derivation: Derivation) : 
     override suspend fun getVerusEncryptionAddress(
         seed: ByteArray?,
         spendingKey: ByteArray?,
+        hdIndex: Int?,
+        encryptionIndex: Int?,
         fromId: ByteArray?,
         toId: ByteArray?,
-        hdIndex: Int,
-        encryptionIndex: Int,
         returnSecret: Boolean
-    ): ChannelKeys = ChannelKeys(derivation.getVerusEncryptionAddress(
+    ): ChannelKeys = ChannelKeys(derivation.getVEncryptionAddress(
             seed = seed,
             spendingKey = spendingKey,
             hdIndex = hdIndex,
@@ -112,23 +113,22 @@ internal class TypesafeDerivationToolImpl(private val derivation: Derivation) : 
             returnSecret = returnSecret
         )
     )
+    
 
     override suspend fun encryptVerusData(
         address: ByteArray,
-        data: ByteArray,
+        encryptedData: ByteArray,
         returnSsk: Boolean
     ): EncryptedPayload {
-        // These parameters don't need conversion, so we just pass them through.
-        return derivation.encryptVerusData(address, data, returnSsk)
+        return derivation.encryptVerusDataD(address, encryptedData, returnSsk)
     }
+
 
     override suspend fun decryptVerusData(
         ivkBytes: ByteArray?,
-        epkHex: ByteArray?,
-        dataToDecrypt: ByteArray,
-        sskHex: ByteArray?
-    ): ByteArray {
-        // These parameters also don't need conversion, so we just pass them through.
-        return derivation.decryptVerusData(ivkBytes, epkHex, dataToDecrypt, sskHex)
-    }
+        ephemeralPublicKeyBytes: ByteArray?,
+        encryptedData: ByteArray,
+        symmetricKeyBytes: ByteArray?
+    ): ByteArray {return derivation.decryptVerusDataD(ivkBytes, ephemeralPublicKeyBytes, encryptedData, symmetricKeyBytes)}
+    
 }

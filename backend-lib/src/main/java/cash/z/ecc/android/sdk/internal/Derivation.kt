@@ -5,7 +5,6 @@ import cash.z.ecc.android.sdk.internal.model.JniShieldedSpendingKey
 import cash.z.ecc.android.sdk.internal.model.JniSharedSecret
 import cash.z.ecc.android.sdk.internal.model.JniChannelKeys
 import cash.z.ecc.android.sdk.model.EncryptedPayload
-import cash.z.ecc.android.sdk.model.ChannelKeys
 
 interface Derivation {
     fun deriveUnifiedAddress(
@@ -87,27 +86,28 @@ interface Derivation {
         networkId: Int
     ): String
 
-    fun getVerusEncryptionAddress(
+    fun getVEncryptionAddress(
         seed: ByteArray?,
         spendingKey: ByteArray?,
-        hdIndex: Int,
-        encryptionIndex: Int,
+        hdIndex: Int?,
+        encryptionIndex: Int?,
         fromId: ByteArray?,
         toId: ByteArray?,
         returnSecret: Boolean
-    ): ChannelKeys
+    ): JniChannelKeys 
 
-    fun encryptVerusData(
-        addressString: ByteArray,
+
+    fun encryptVerusDataD(
+        addressBytes: ByteArray,
         data: ByteArray,
         returnSsk: Boolean
     ): EncryptedPayload
 
-    fun decryptVerusData(
+    fun decryptVerusDataD(
         ivkBytes: ByteArray?,
-        ephemeralPublicKeyHex: ByteArray?,
+        ephemeralPublicKeyBytes: ByteArray?,
         dataToDecrypt: ByteArray,
-        symmetricKeyHex: ByteArray?
+        symmetricKeyBytes: ByteArray?
     ): ByteArray
 
     companion object {

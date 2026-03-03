@@ -7,6 +7,7 @@ import cash.z.ecc.android.sdk.internal.model.JniChannelKeys
 
 import cash.z.ecc.android.sdk.model.EncryptedPayload
 
+
 class RustDerivationTool private constructor() : Derivation {
     override fun deriveUnifiedFullViewingKeys(
         seed: ByteArray,
@@ -98,28 +99,28 @@ class RustDerivationTool private constructor() : Derivation {
         TODO("Legacy getEncryptionAddress is not supported. Use getVerusEncryptionAddress instead.")
     }
 
-    override fun getVerusEncryptionAddress(
+    override fun getVEncryptionAddress(
         seed: ByteArray?,
         spendingKey: ByteArray?,
-        hdIndex: Int,
-        encryptionIndex: Int,
+        hdIndex: Int?,
+        encryptionIndex: Int?,
         fromId: ByteArray?,
         toId: ByteArray?,
         returnSecret: Boolean
-    ): JniChannelKeys = zGetEncryptionAddress(seed, spendingKey, hdIndex, encryptionIndex, fromId, toId, returnSecret)
+    ): JniChannelKeys = ZGetVEncryptionAddress(seed, spendingKey, hdIndex ?: -1, encryptionIndex ?: -1, fromId, toId, returnSecret)
 
-    override fun encryptVerusData(
-        addressString: ByteArray, // This can be a byte array, is of type  SaplingPaymentAddress in encryptResponseToAddress, we can use fromBuffer method
+    override fun encryptVerusDataD(
+        addressBytes: ByteArray, // This can be a byte array, is of type  SaplingPaymentAddress in encryptResponseToAddress, we can use fromBuffer method
         data: ByteArray,
         returnSsk: Boolean
-    ): EncryptedPayload = encryptData(addressString, data, returnSsk)
+    ): EncryptedPayload = encryptVData(addressBytes, data, returnSsk)
 
-    override fun decryptVerusData(
+    override fun decryptVerusDataD(
         ivkBytes: ByteArray?,
         ephemeralPublicKeyBytes: ByteArray?,
         dataToDecrypt: ByteArray,
         symmetricKeyBytes: ByteArray?
-    ): ByteArray = decryptData(ivkBytes, ephemeralPublicKeyBytes, dataToDecrypt, symmetricKeyBytes)
+    ): ByteArray = decryptVData(ivkBytes, ephemeralPublicKeyBytes, dataToDecrypt, symmetricKeyBytes)
 
     companion object {
         suspend fun new(): Derivation {
@@ -203,7 +204,7 @@ class RustDerivationTool private constructor() : Derivation {
         ): String
 
         @JvmStatic
-        private external fun zGetEncryptionAddress(
+        private external fun ZGetVEncryptionAddress(
             seed: ByteArray?,
             spendingKey: ByteArray?,
             hdIndex: Int,
@@ -214,18 +215,18 @@ class RustDerivationTool private constructor() : Derivation {
         ): JniChannelKeys
 
         @JvmStatic
-        private external fun encryptData(
-            addressString: ByteArray,
+        private external fun encryptVData(
+            addressBytes: ByteArray,
             data: ByteArray,
             returnSsk: Boolean
         ): EncryptedPayload
 
         @JvmStatic
-        private external fun decryptData(
-            ivkHex: ByteArray?,
-            ephemeralPublicKeyHex: ByteArray?,
-            ciphertextHex: ByteArray,
-            symmetricKeyHex: ByteArray?
+        private external fun decryptVData(
+            ivkBytes: ByteArray?,
+            ephemeralPublicKeyBytes: ByteArray?,
+            encyptedData: ByteArray,
+            symmetricKeyBytes: ByteArray?
         ): ByteArray
     }
 }

@@ -110,12 +110,12 @@ fun Derivation.getEncryptionAddress(
 fun Derivation.getVerusEncryptionAddress(
     seed: ByteArray?,
     spendingKey: ByteArray?,
+    hdIndex: Int?,
+    encryptionIndex: Int?,
     fromId: ByteArray?,
     toId: ByteArray?,
-    hdIndex: Int,
-    encryptionIndex: Int,
     returnSecret: Boolean
-): ChannelKeys { return getVerusEncryptionAddress(
+): ChannelKeys =  ChannelKeys(getVEncryptionAddress(
         seed,
         spendingKey,
         hdIndex,
@@ -123,25 +123,22 @@ fun Derivation.getVerusEncryptionAddress(
         fromId,
         toId,
         returnSecret
-    )
-]}
+    ))
 
-
-fun Derivation.encryptMessage(
+fun Derivation.encryptVerusData(
     address: ByteArray,
     data: ByteArray,
     returnSsk: Boolean
-): EncryptedPayload {
-    return encryptVerusData(address, data, returnSsk)
-}
+): EncryptedPayload  = encryptVerusDataD(address, data, returnSsk)
 
-fun Derivation.decryptMessage(
+
+fun Derivation.decryptVerusData(
     params: DecryptParams
-): ByteArray {
-    return decryptVerusData(
-        params.ivkBytes,
-        params.ephemeralPublicKey,
-        params.encryptedData,
-        params.symmetricKeyBytes
+): ByteArray { return decryptVerusDataD(
+        ivkBytes = params.ivkBytes,
+        ephemeralPublicKeyBytes = params.ephemeralPublicKey,
+        dataToDecrypt = params.encryptedData,
+        symmetricKeyBytes = params.symmetricKeyBytes
     )
 }
+

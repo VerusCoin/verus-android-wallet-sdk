@@ -161,7 +161,7 @@ interface DerivationTool {
      * @param spendingKey The user's extended spending key. Can be null if seed is provided.
      * @param fromId A unique identifier for the sender (e.g., a hex-encoded VerusID). Can be null.
      * @param toId A unique identifier for the recipient (e.g., a hex-encoded VerusID). Can be null.
-     * @param hdIndex The HD account index to use if deriving from a seed. Defaults to 0.
+     * @param hdIndex The HD account index to use if deriving from a seed.
      * @param encryptionIndex The index for the final encryption key derivation. Defaults to 0.
      * @param returnSecret If true, the derived extended spending key will be included in the result. Defaults to false.
      * @return A [ChannelKeys] object containing the derived address, viewing key, and optional spending key.
@@ -169,15 +169,15 @@ interface DerivationTool {
     suspend fun getVerusEncryptionAddress(
         seed: ByteArray?,
         spendingKey: ByteArray?,
+        hdIndex: Int? = null,
+        encryptionIndex: Int? = 0,
         fromId: ByteArray?,
         toId: ByteArray?,
-        hdIndex: Int = 0,
-        encryptionIndex: Int = 0,
         returnSecret: Boolean = false
     ): ChannelKeys
 
     /**
-     * Encrypts a message for a given z-address using Verus-specific message encryption.
+     * Encrypts data buffer for a given z-address using Verus-specific encryption.
      *
      * @param address The recipient's z-address.
      * @param message The plaintext message to encrypt.
@@ -191,7 +191,7 @@ interface DerivationTool {
     ): EncryptedPayload
 
     /**
-     * Decrypts a Verus-specific encrypted message.
+     * Decrypts a Verus-specific encrypted Data Buffer.
      *
      * @param ivkBytes The sender's ivkBytes. Not needed if sskBytes is provided.
      * @param ephemeralPublicKey The ephemeral public key bytes included in the encrypted payload.
@@ -201,9 +201,9 @@ interface DerivationTool {
      */
     suspend fun decryptVerusData(
         ivkBytes: ByteArray?,
-        epkBytes: ByteArray?,
+        ephemeralPublicKeyBytes: ByteArray?,
         encryptedData: ByteArray,
-        sskBytes: ByteArray?
+        symmetricKeyBytes: ByteArray?
     ): ByteArray
 
     companion object {

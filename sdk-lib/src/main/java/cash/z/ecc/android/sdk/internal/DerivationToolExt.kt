@@ -110,20 +110,12 @@ fun Derivation.getEncryptionAddress(
 fun Derivation.getVerusEncryptionAddress(
     seed: ByteArray?,
     spendingKey: ByteArray?,
-    hdIndex: Int?,
-    encryptionIndex: Int?,
+    hdIndex: Int,
+    encryptionIndex: Int,
     fromId: ByteArray?,
     toId: ByteArray?,
     returnSecret: Boolean
-): ChannelKeys =  ChannelKeys(getVEncryptionAddress(
-        seed,
-        spendingKey,
-        hdIndex,
-        encryptionIndex,
-        fromId,
-        toId,
-        returnSecret
-    ))
+): ChannelKeys = ChannelKeys(getVerusEncryptionAddress(seed, spendingKey, hdIndex, encryptionIndex, fromId, toId, returnSecret))
 
 fun Derivation.encryptVerusData(
     address: ByteArray,

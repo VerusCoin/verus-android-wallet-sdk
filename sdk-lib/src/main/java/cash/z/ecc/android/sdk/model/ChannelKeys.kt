@@ -36,6 +36,8 @@ class ChannelKeys private constructor(
 
     fun copySpendingKeyBytes(): ByteArray? = spendingKeyBytes?.byteArray?.copyOf()
 
+    fun toString(): String = "ChannelKeys(address=***, extendedFullViewingKeyBytes=***, internalViewingKeyBytes=***, spendingKeyBytes=***)"
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false

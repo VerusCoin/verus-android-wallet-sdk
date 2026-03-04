@@ -962,7 +962,7 @@ pub extern "C" fn Java_cash_z_ecc_android_sdk_internal_jni_RustDerivationTool_ge
     unwrap_exc_or(&mut env, res, ptr::null_mut())
 }
 #[no_mangle]
-pub extern "C" fn Java_cash_z_ecc_android_sdk_internal_jni_RustDerivationTool_ZGetVEncryptionAddress<'local>(
+pub extern "C" fn Java_cash_z_ecc_android_sdk_internal_jni_RustDerivationTool_zGetEncryptionAddress<'local>(
     mut env: JNIEnv<'local>,
     _class: JObject<'local>,
     seed: JByteArray<'local>,
@@ -974,43 +974,39 @@ pub extern "C" fn Java_cash_z_ecc_android_sdk_internal_jni_RustDerivationTool_ZG
     return_secret: jboolean,
 ) -> jobject {
     let res = catch_unwind(&mut env, |env| {
-
         let _span = tracing::info_span!("RustDerivationTool.getVEncryptionAddress").entered();
-
-
-        let hd_index: Option<u32> = if hd_index < 0 {
-            None
-        } else {
-            Some(hd_index as u32)
-        };
-
-        let encryption_index: Option<u32> = if encryption_index < 0 {
-            None                        
-        } else {
-            Some(encryption_index as u32)  
-        };
-
+        if hd_index < -1 {
+            // -1 is valid here, because we pass this through as sentinel for None conversion, when we do not have 
+            // a meaningful index scenario (i.e. extsk-based derivation carries hdIndex with it inherently)
+            return Err(anyhow!("Invalid hd_index value! expected >= -1, actual {:?}", hd_index));
+        }
+        if encryption_index < 0 {
+            // conversely, -1 is not a valid argument here. encryption index is always meaningful in all contexts
+            return Err(anyhow!("Invalid hd_index value! expected >= -1, actual {:?}", hd_index));
+        }
         let seed = if seed.is_null() { None } else { Some(SecretVec::new(env.convert_byte_array(seed)?.into())) };
         let spending_key = if spending_key.is_null() { None } else { Some(single_copy_read_ext_key(env, &spending_key)?) };
-        let return_secret = return_secret == JNI_TRUE;
+        let hd_index = if hd_index == -1 { None } else { Some(hd_index as u32) };   
+        let encryption_index = encryption_index as u32;
+        let return_secret = { return_secret == JNI_TRUE };
 
-        let from_id_bytes: Option<[u8; 20]> = if from_id.is_null() { None } else {
+        let from_id_bytes: Option<[u8; HASH160_BYTE_LEN]> = if from_id.is_null() { None } else {
             let v = env.convert_byte_array(from_id)?;
-            if v.len() != 20 {
+            if v.len() != HASH160_BYTE_LEN {
                 return Err(anyhow!("Invalid length of from_id provided, must be 20 bytes exactly. actual: {}", v.len()));
             }
-            let mut arr = [0u8; 20];
+            let mut arr = [0u8; HASH160_BYTE_LEN];
             arr.copy_from_slice(&v);
             Some(arr)
         };
 
-        let to_id_bytes: Option<[u8; 20]> = if to_id.is_null() { None } else {
+        let to_id_bytes: Option<[u8; HASH160_BYTE_LEN]> = if to_id.is_null() { None } else {
             let v = env.convert_byte_array(to_id)?;
-            if v.len() != 20 {
+            if v.len() != HASH160_BYTE_LEN {
                 return Err(anyhow!(
                     "Invalid length of to_id provided, must be 20 bytes exactly. actual: {}", v.len()));
             }
-            let mut arr = [0u8; 20];
+            let mut arr = [0u8; HASH160_BYTE_LEN];
             arr.copy_from_slice(&v);
             Some(arr)
         };

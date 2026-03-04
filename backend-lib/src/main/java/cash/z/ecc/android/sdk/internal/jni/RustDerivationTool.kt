@@ -99,15 +99,15 @@ class RustDerivationTool private constructor() : Derivation {
         TODO("Legacy getEncryptionAddress is not supported. Use getVerusEncryptionAddress instead.")
     }
 
-    override fun getVEncryptionAddress(
+    override fun getVerusEncryptionAddress(
         seed: ByteArray?,
         spendingKey: ByteArray?,
-        hdIndex: Int?,
-        encryptionIndex: Int?,
+        hdIndex: Int,
+        encryptionIndex: Int,
         fromId: ByteArray?,
         toId: ByteArray?,
         returnSecret: Boolean
-    ): JniChannelKeys = ZGetVEncryptionAddress(seed, spendingKey, hdIndex ?: -1, encryptionIndex ?: -1, fromId, toId, returnSecret)
+    ): JniChannelKeys = zGetEncryptionAddress(seed, spendingKey, hdIndex, encryptionIndex, fromId, toId, returnSecret)
 
     override fun encryptVerusDataD(
         addressBytes: ByteArray, // This can be a byte array, is of type  SaplingPaymentAddress in encryptResponseToAddress, we can use fromBuffer method
@@ -204,7 +204,7 @@ class RustDerivationTool private constructor() : Derivation {
         ): String
 
         @JvmStatic
-        private external fun ZGetVEncryptionAddress(
+        private external fun zGetEncryptionAddress(
             seed: ByteArray?,
             spendingKey: ByteArray?,
             hdIndex: Int,

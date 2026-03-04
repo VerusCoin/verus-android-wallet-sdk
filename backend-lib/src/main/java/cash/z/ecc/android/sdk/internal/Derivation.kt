@@ -86,15 +86,15 @@ interface Derivation {
         networkId: Int
     ): String
 
-    fun getVEncryptionAddress(
+    fun getVerusEncryptionAddress(
         seed: ByteArray?,
         spendingKey: ByteArray?,
-        hdIndex: Int?,
-        encryptionIndex: Int?,
+        hdIndex: Int,
+        encryptionIndex: Int,
         fromId: ByteArray?,
         toId: ByteArray?,
         returnSecret: Boolean
-    ): JniChannelKeys 
+    ): JniChannelKeys
 
 
     fun encryptVerusDataD(

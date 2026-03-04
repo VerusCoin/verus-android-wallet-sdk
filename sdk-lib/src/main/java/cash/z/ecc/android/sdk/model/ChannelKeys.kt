@@ -21,14 +21,14 @@ class ChannelKeys private constructor(
     private val spendingKeyBytes: FirstClassByteArray? = null
 ) {
     internal constructor(jni: JniChannelKeys) : this(
-        address = jni.address.copyOf(),
+        address = jni.address,
         extendedFullViewingKeyBytes = FirstClassByteArray(jni.extendedFullViewingKeyBytes.copyOf()),
         internalViewingKeyBytes = FirstClassByteArray(jni.internalViewingKeyBytes.copyOf()),
         spendingKeyBytes = jni.spendingKeyBytes?.let { FirstClassByteArray(it.copyOf()) }
     )
 
     /* copy functions are for internal use only */
-    fun copyAddress(): String = address.copyOf()
+    fun copyAddress(): String = address
 
     fun copyExtendedFullViewingKeyBytes(): ByteArray = extendedFullViewingKeyBytes.byteArray.copyOf()
 
@@ -67,7 +67,7 @@ class ChannelKeys private constructor(
             internalViewingKeyBytes: ByteArray,
             spendingKeyBytes: ByteArray? = null
         ): Result<ChannelKeys> {
-            val addressCopy = address.copyOf()
+            val addressCopy = address
             val xfvkCopy = extendedFullViewingKeyBytes.copyOf()
             val ivkCopy = internalViewingKeyBytes.copyOf()
             val skCopy = spendingKeyBytes?.copyOf()

@@ -8,7 +8,7 @@ import androidx.annotation.Keep
  */
 @Keep
 class JniChannelKeys(
-    val address: String,
+    val address: ByteArray,
 
     val extendedFullViewingKeyBytes: ByteArray,
 
@@ -18,7 +18,7 @@ class JniChannelKeys(
 ) {
     // Override to prevent leaking key material to logs
     override fun toString(): String =
-        "JniChannelKeys(address=$address, extendedFullViewingKeyBytes=***, internalViewingKeyBytes=***, spendingKeyBytes=${if (spendingKeyBytes != null) "***" else "null"})"
+        "JniChannelKeys(address=***, extendedFullViewingKeyBytes=***, internalViewingKeyBytes=***, spendingKeyBytes=${if (spendingKeyBytes != null) "***" else "null"})"
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -26,7 +26,7 @@ class JniChannelKeys(
 
         other as JniChannelKeys
 
-        if (address != other.address) return false
+        if (!address.contentEquals(other.address)) return false
         if (!extendedFullViewingKeyBytes.contentEquals(other.extendedFullViewingKeyBytes)) return false
 
         if (!internalViewingKeyBytes.contentEquals(other.internalViewingKeyBytes)) return false
@@ -41,7 +41,7 @@ class JniChannelKeys(
     }
 
     override fun hashCode(): Int {
-        var result = address.hashCode()
+        var result = address.contentHashCode()
         result = 31 * result + extendedFullViewingKeyBytes.contentHashCode()
         result = 31 * result + internalViewingKeyBytes.contentHashCode()
         result = 31 * result + (spendingKeyBytes?.contentHashCode() ?: 0)

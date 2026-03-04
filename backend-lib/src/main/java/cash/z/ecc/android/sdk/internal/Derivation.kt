@@ -96,18 +96,19 @@ interface Derivation {
         returnSecret: Boolean
     ): JniChannelKeys
 
-    fun encryptVerusMessage(
-        addressString: String,
-        message: String,
+
+    fun encryptVerusDataD(
+        addressBytes: ByteArray,
+        data: ByteArray,
         returnSsk: Boolean
     ): EncryptedPayload
 
-    fun decryptVerusMessage(
-        dfvkHex: String?,
-        ephemeralPublicKeyHex: String?,
-        ciphertextHex: String,
-        symmetricKeyHex: String?
-    ): String
+    fun decryptVerusDataD(
+        ivkBytes: ByteArray?,
+        ephemeralPublicKeyBytes: ByteArray?,
+        dataToDecrypt: ByteArray,
+        symmetricKeyBytes: ByteArray?
+    ): ByteArray
 
     companion object {
         const val DEFAULT_NUMBER_OF_ACCOUNTS = 1

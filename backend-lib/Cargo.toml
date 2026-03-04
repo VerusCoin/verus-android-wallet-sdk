@@ -28,12 +28,13 @@ zcash_address = "0.3"
 #zcash_client_sqlite = { version = "0.10.3", features = ["transparent-inputs", "unstable", "linearscanning"] }
 zcash_client_backend = { version = "0.12.1", features = ["unstable"] }
 zcash_client_sqlite = { version = "0.10.3", features = ["unstable", "linearscanning"] }
+# Check that we do indeed need this
+zcash_keys = "0.6.1"
 zcash_primitives = "0.15"
 zcash_proofs = "0.15"
 zcash_note_encryption = "0.4.1"
 jubjub = "0.10"
 verus_zfunc = { version = "0.1.0", default-features = false }
-
 
 # Initialization
 rayon = "1.7"
@@ -53,6 +54,7 @@ dlopen2 = "0.7"
 libc = "0.2"
 chacha20poly1305 = "0.10.1"
 getrandom = "0.2.16"
+
 # Uncomment this to use orchard-specific functions
 [features]
 orchard = []

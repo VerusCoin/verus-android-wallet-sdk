@@ -161,7 +161,7 @@ interface DerivationTool {
      * @param spendingKey The user's extended spending key. Can be null if seed is provided.
      * @param fromId A unique identifier for the sender (e.g., a hex-encoded VerusID). Can be null.
      * @param toId A unique identifier for the recipient (e.g., a hex-encoded VerusID). Can be null.
-     * @param hdIndex The HD account index to use if deriving from a seed. Defaults to 0.
+     * @param hdIndex The HD account index to use if deriving from a seed.
      * @param encryptionIndex The index for the final encryption key derivation. Defaults to 0.
      * @param returnSecret If true, the derived extended spending key will be included in the result. Defaults to false.
      * @return A [ChannelKeys] object containing the derived address, viewing key, and optional spending key.
@@ -177,34 +177,34 @@ interface DerivationTool {
     ): ChannelKeys
 
     /**
-     * Encrypts a message for a given z-address using Verus-specific message encryption.
+     * Encrypts data buffer for a given z-address using Verus-specific encryption.
      *
      * @param address The recipient's z-address.
      * @param message The plaintext message to encrypt.
      * @param returnSsk If true, the symmetric key used for encryption will be returned in the payload. Defaults to false.
      * @return An [EncryptedPayload] containing the ciphertext and public key material.
      */
-    suspend fun encryptVerusMessage(
-        address: String,
-        message: String,
+    suspend fun encryptVerusData(
+        address: ByteArray,
+        encryptedData: ByteArray,
         returnSsk: Boolean = false
     ): EncryptedPayload
 
     /**
-     * Decrypts a Verus-specific encrypted message.
+     * Decrypts a Verus-specific encrypted Data Buffer.
      *
-     * @param fvkHex The recipient's hex-encoded full viewing key. Not needed if sskHex is provided.
-     * @param epkHex The sender's hex-encoded ephemeral public key. Not needed if sskHex is provided.
-     * @param ciphertextHex The hex-encoded encrypted message.
-     * @param sskHex The hex-encoded symmetric session key. If provided, fvkHex and epkHex are ignored.
+     * @param ivkBytes The sender's ivkBytes. Not needed if sskBytes is provided.
+     * @param ephemeralPublicKey The ephemeral public key bytes included in the encrypted payload.
+     * @param encryptedData The encrypted data bytes.
+     * @param sskBytes The symmetric session key bytes. If provided, ivkBytes and epkBytes are ignored.
      * @return The decrypted plaintext message as a String.
      */
-    suspend fun decryptVerusMessage(
-        fvkHex: String?,
-        epkHex: String?,
-        ciphertextHex: String,
-        sskHex: String?
-    ): String
+    suspend fun decryptVerusData(
+        ivkBytes: ByteArray?,
+        ephemeralPublicKeyBytes: ByteArray?,
+        encryptedData: ByteArray,
+        symmetricKeyBytes: ByteArray?
+    ): ByteArray
 
     companion object {
         const val DEFAULT_NUMBER_OF_ACCOUNTS = Derivation.DEFAULT_NUMBER_OF_ACCOUNTS

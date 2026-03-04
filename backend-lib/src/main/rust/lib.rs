@@ -4,7 +4,7 @@ use std::num::NonZeroU32;
 use std::panic;
 use std::path::Path;
 use std::ptr;
-
+use sapling::PaymentAddress;
 //use tracing::warn;
 
 use rand::rngs::OsRng;
@@ -17,7 +17,7 @@ use jni::{
     JNIEnv,
 };
 use prost::Message;
-use sapling::zip32::ExtendedSpendingKey;
+use sapling::zip32::{ExtendedFullViewingKey, ExtendedSpendingKey};
 use secrecy::{ExposeSecret, SecretVec, Secret};
 use tracing::{debug, error};
 use tracing_subscriber::prelude::*;
@@ -25,9 +25,8 @@ use tracing_subscriber::reload;
 use zcash_address::{ToAddress, ZcashAddress};
 use verus_zfunc::{
         z_getencryptionaddress,
-        encrypt_message,
-        decrypt_message,
-        DecryptParams
+        encrypt_data,
+        decrypt_data,
  };
 //use chacha20poly1305::{ChaCha20Poly1305, KeyInit, AeadInPlace, Key};
 
@@ -370,15 +369,17 @@ fn encode_extsk<'a>(
 
 pub fn encode_channel_keys<'a>(
     env: &mut JNIEnv<'a>,
-    address: &String,
+    address: &PaymentAddress, // TODO: (Biz) do we need this as bytes in return functiion? 
     extfvk_bytes: &Secret<[u8; 169]>,
     spending_key_bytes: Option<&Secret<[u8; 169]>>,
     ivk_bytes: &Secret<[u8; 32]>,
 ) -> jni::errors::Result<JObject<'a>> {
-    let address_java = env.new_string(address)?;
+
+    let address_java = env.byte_array_from_slice(&address.to_bytes())?;
+
     let fvk_java = env.byte_array_from_slice(extfvk_bytes.expose_secret().as_slice())?;
 
-    let ivk_java = env.byte_array_from_slice(ivk_bytes.expose_secret().as_slice())?;
+    let ivk_java = env.byte_array_from_slice(ivk_bytes.expose_secret())?;
 
     let sk_java = match spending_key_bytes {
         Some(sk) => env.byte_array_from_slice(&sk.expose_secret().as_slice())?.into(),
@@ -387,9 +388,9 @@ pub fn encode_channel_keys<'a>(
 
     Ok(env.new_object(
         "cash/z/ecc/android/sdk/internal/model/JniChannelKeys",
-        "(Ljava/lang/String;[B[B[B)V",
+        "(L[B[B[B[B)V",
         &[
-            JValue::Object(&address_java.into()),
+            JValue::Object(&address_java),
             JValue::Object(&fvk_java),
             JValue::Object(&ivk_java),
             JValue::Object(&sk_java),
@@ -959,6 +960,7 @@ pub extern "C" fn Java_cash_z_ecc_android_sdk_internal_jni_RustDerivationTool_ge
     });
     unwrap_exc_or(&mut env, res, ptr::null_mut())
 }
+
 #[no_mangle]
 #[allow(non_snake_case)]
 pub extern "C" fn Java_cash_z_ecc_android_sdk_internal_jni_RustDerivationTool_zGetEncryptionAddress<'local>(
@@ -973,6 +975,7 @@ pub extern "C" fn Java_cash_z_ecc_android_sdk_internal_jni_RustDerivationTool_zG
     return_secret: jboolean,
 ) -> jobject {
     let res = catch_unwind(&mut env, |env| {
+        let _span = tracing::info_span!("RustDerivationTool.getVerusEncryptionAddress").entered();
         if hd_index < -1 {
             // -1 is valid here, because we pass this through as sentinel for None conversion, when we do not have 
             // a meaningful index scenario (i.e. extsk-based derivation carries hdIndex with it inherently)
@@ -982,7 +985,6 @@ pub extern "C" fn Java_cash_z_ecc_android_sdk_internal_jni_RustDerivationTool_zG
             // conversely, -1 is not a valid argument here. encryption index is always meaningful in all contexts
             return Err(anyhow!("Invalid hd_index value! expected >= -1, actual {:?}", hd_index));
         }
-
         let seed = if seed.is_null() { None } else { Some(SecretVec::new(env.convert_byte_array(seed)?.into())) };
         let spending_key = if spending_key.is_null() { None } else { Some(single_copy_read_ext_key(env, &spending_key)?) };
         let hd_index = if hd_index == -1 { None } else { Some(hd_index as u32) };   
@@ -1013,46 +1015,62 @@ pub extern "C" fn Java_cash_z_ecc_android_sdk_internal_jni_RustDerivationTool_zG
         // this is the pure rust function in 'verus_zfunc' crate
         let channel_keys = z_getencryptionaddress(seed.as_ref(), spending_key.as_ref(), hd_index, encryption_index, from_id_bytes.as_ref(), to_id_bytes.as_ref(), return_secret)
             .map_err(|e| anyhow!("z_getencryptionaddress failed: {}", e))?;
-
-        Ok(encode_channel_keys(env, &channel_keys.address, &channel_keys.extfvk_bytes, channel_keys.spending_key_bytes.as_ref(), &channel_keys.ivk_bytes)?.into_raw())
+        
+        let result = encode_channel_keys(
+            env,
+            &channel_keys.address,
+            &channel_keys.extfvk_bytes,          
+            channel_keys.spending_key_bytes.as_ref(),
+            &channel_keys.ivk_bytes,
+        )?;
+        Ok(result.into_raw())
     });
-
     unwrap_exc_or(&mut env, res, std::ptr::null_mut())
 }
+
 #[no_mangle]
-#[allow(non_snake_case)]
-pub extern "C" fn Java_cash_z_ecc_android_sdk_internal_jni_RustDerivationTool_encryptMessage<'local>(
+pub extern "C" fn Java_cash_z_ecc_android_sdk_internal_jni_RustDerivationTool_encryptVData<'local>(
         mut env: JNIEnv<'local>,
         _class: JObject<'local>,
-        address_string: JString<'local>,
-        message: JString<'local>,
+        address_bytes: JByteArray,
+        data_to_encrypt: JByteArray,
         return_ssk: jboolean,
     ) -> jobject {
     let res = catch_unwind(&mut env, |env| {
-        // convert Java types to Rust types
-        let rust_addr: String = env.get_string(&address_string)?.into();
-        let rust_msg: String = env.get_string(&message)?.into();
-        let rust_return_ssk = return_ssk == JNI_TRUE;
+        
+        let _span = tracing::info_span!("RustDerivationTool.encryptVerusDataD").entered();
 
-        // call the centralized library function
-        let encrypted_payload = encrypt_message(rust_addr, rust_msg, rust_return_ssk)
-            .map_err(|e| anyhow!("encrypt_message failed: {}", e))?;
+        // convert 43 bytes directly to PaymentAddress - no bech32 round trip
+        let addr_bytes: [u8; 43] = env.convert_byte_array(&address_bytes)?
+            .try_into()
+            .map_err(|_| anyhow!("Address must be exactly 43 bytes"))?;
+
+        let payment_address = PaymentAddress::from_bytes(&addr_bytes)
+            .ok_or_else(|| anyhow!("Invalid PaymentAddress bytes"))?;
+        
+        let rust_data = SecretVec::new(env.convert_byte_array(&data_to_encrypt)?); // ← convert JByteArray → SecretVec<u8>
+        let rust_return_ssk = return_ssk == JNI_TRUE;            // ← convert jboolean → bool
+
+        // only reference of unencrypted data
+        let encrypted_payload = encrypt_data(&payment_address, &rust_data, rust_return_ssk)
+            .map_err(|e| anyhow!("encrypt_data failed: {}", e))?;
+
 
         // convert the Rust result into a new Java `EncryptedPayload` object
-        let epk_java = env.new_string(&encrypted_payload.ephemeral_public_key)?;
-        let ciphertext_java = env.new_string(&encrypted_payload.ciphertext)?;
+        let epk_java = env.byte_array_from_slice(&encrypted_payload.ephemeral_public_key)?;
+        let secretdata_java = env.byte_array_from_slice(&encrypted_payload.encrypted_data)?;
 
         let ssk_java = match encrypted_payload.symmetric_key {
-            Some(ssk) => env.new_string(ssk)?.into(),
+            Some(ssk) => env.byte_array_from_slice(ssk.expose_secret())?.into(),
             None => JObject::null(),
         };
 
         let result_obj = env.new_object(
             "cash/z/ecc/android/sdk/model/EncryptedPayload",
-            "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",
+            "L([B[B[B)V",
             &[
                 JValue::Object(&epk_java),
-                JValue::Object(&ciphertext_java),
+                JValue::Object(&secretdata_java),
                 JValue::Object(&ssk_java),
             ],
         )?;
@@ -1064,30 +1082,51 @@ pub extern "C" fn Java_cash_z_ecc_android_sdk_internal_jni_RustDerivationTool_en
 }
 
 #[no_mangle]
-#[allow(non_snake_case)]
-pub extern "C" fn Java_cash_z_ecc_android_sdk_internal_jni_RustDerivationTool_decryptMessage<'local>(
+pub extern "C" fn Java_cash_z_ecc_android_sdk_internal_jni_RustDerivationTool_decryptVData<'local>(
         mut env: JNIEnv<'local>,
         _class: JObject<'local>,
-        fvk_hex: JString<'local>,
-        ephemeral_public_key_hex: JString<'local>,
-        ciphertext_hex: JString<'local>,
-        symmetric_key_hex: JString<'local>,
-    ) -> jstring {
+        ivk_bytes: JByteArray<'local>, //ivk bytes
+        ephemeral_public_key_hex: JByteArray<'local>,   // epk bytes
+        data_bytes: JByteArray<'local>,            
+        symmetric_key_hex: JByteArray<'local>,          
+    ) -> jbyteArray {
     let res = catch_unwind(&mut env, |env| {
-        // convert all Java types to Rust types.
-        let params = DecryptParams {
-            fvk_hex: if fvk_hex.is_null() { None } else { Some(env.get_string(&fvk_hex)?.into()) },
-            ephemeral_public_key_hex: if ephemeral_public_key_hex.is_null() { None } else { Some(env.get_string(&ephemeral_public_key_hex)?.into()) },
-            ciphertext_hex: env.get_string(&ciphertext_hex)?.into(),
-            symmetric_key_hex: if symmetric_key_hex.is_null() { None } else { Some(env.get_string(&symmetric_key_hex)?.into()) },
+        
+        let _span = tracing::info_span!("RustDerivationTool.decryptVerusDataD").entered();
+
+        // decode bech32 ivk string → 32 raw bytes and do checks
+        let ivk: Option<Secret<[u8; 32]>> = if ivk_bytes.is_null() { None } else {
+            let arr: [u8; 32] = env.convert_byte_array(&ivk_bytes)?
+                .try_into()
+                .map_err(|_| anyhow!("ivk_bytes must be exactly 32 bytes"))?;
+            Some(Secret::new(arr))
         };
+        
+        // decode hex string of ephemeral public key → 32 raw bytes
+        let epk: Option<[u8; 32]> = if ephemeral_public_key_hex.is_null() { None } else {
+            Some(env.convert_byte_array(&ephemeral_public_key_hex)?
+                .try_into()
+                .map_err(|_| anyhow!("epk must be exactly 32 bytes"))?)  
+        };
+        let ssk: Option<Secret<[u8; 32]>> = if symmetric_key_hex.is_null() { None } else {
+            let arr: [u8; 32] = env.convert_byte_array(&symmetric_key_hex)?
+                .try_into()
+                .map_err(|_| anyhow!("ssk must be exactly 32 bytes"))?;  // ← closure
+            Some(Secret::new(arr))
+        };
+        /*let params = DecryptParams {
+            ivk_bytes: ivk,
+            epk_bytes: epk,
+            data_to_decrypt: SecretVec::new(env.convert_byte_array(&data_bytes)?), // assuming data_bytes is actually byte-encoded ciphertext
+            symmetric_key_bytes: ssk,
+        };*/
 
-        // call the centralized library function
-        let decrypted_message = decrypt_message(params)
-            .map_err(|e| anyhow!("decrypt_message failed: {}", e))?;
+        let data_to_decrypt = SecretVec::new(env.convert_byte_array(data_bytes)?);
 
-        // convert the Rust String result back to a Java String
-        let output = env.new_string(decrypted_message)?;
+        let decrypted = decrypt_data(ivk.as_ref(), epk.as_ref(), &data_to_decrypt, ssk.as_ref()) // this function name is changed
+                    .map_err(|e| anyhow!("decrypt failed: {}", e))?;
+
+        let output = env.byte_array_from_slice(&decrypted.expose_secret().as_slice())?;
         Ok(output.into_raw())
     });
 

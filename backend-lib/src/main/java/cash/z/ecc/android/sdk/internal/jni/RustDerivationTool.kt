@@ -108,18 +108,18 @@ class RustDerivationTool private constructor() : Derivation {
         returnSecret: Boolean
     ): JniChannelKeys = zGetEncryptionAddress(seed, spendingKey, hdIndex, encryptionIndex, fromId, toId, returnSecret)
 
-    override fun encryptVerusMessage(
-        addressString: String,
-        message: String,
+    override fun encryptVerusDataD(
+        addressBytes: ByteArray, // This can be a byte array, is of type  SaplingPaymentAddress in encryptResponseToAddress, we can use fromBuffer method
+        data: ByteArray,
         returnSsk: Boolean
-    ): EncryptedPayload = encryptMessage(addressString, message, returnSsk)
+    ): EncryptedPayload = encryptVData(addressBytes, data, returnSsk)
 
-    override fun decryptVerusMessage(
-        dfvkHex: String?,
-        ephemeralPublicKeyHex: String?,
-        ciphertextHex: String,
-        symmetricKeyHex: String?
-    ): String = decryptMessage(dfvkHex, ephemeralPublicKeyHex, ciphertextHex, symmetricKeyHex)
+    override fun decryptVerusDataD(
+        ivkBytes: ByteArray?,
+        ephemeralPublicKeyBytes: ByteArray?,
+        dataToDecrypt: ByteArray,
+        symmetricKeyBytes: ByteArray?
+    ): ByteArray = decryptVData(ivkBytes, ephemeralPublicKeyBytes, dataToDecrypt, symmetricKeyBytes)
 
     companion object {
         suspend fun new(): Derivation {
@@ -214,18 +214,18 @@ class RustDerivationTool private constructor() : Derivation {
         ): JniChannelKeys
 
         @JvmStatic
-        private external fun encryptMessage(
-            addressString: String,
-            message: String,
+        private external fun encryptVData(
+            addressBytes: ByteArray,
+            data: ByteArray,
             returnSsk: Boolean
         ): EncryptedPayload
 
         @JvmStatic
-        private external fun decryptMessage(
-            dfvkHex: String?,
-            ephemeralPublicKeyHex: String?,
-            ciphertextHex: String,
-            symmetricKeyHex: String?
-        ): String
+        private external fun decryptVData(
+            ivkBytes: ByteArray?,
+            ephemeralPublicKeyBytes: ByteArray?,
+            encyptedData: ByteArray,
+            symmetricKeyBytes: ByteArray?
+        ): ByteArray
     }
 }

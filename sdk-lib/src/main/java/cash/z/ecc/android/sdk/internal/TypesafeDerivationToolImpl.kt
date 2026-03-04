@@ -102,33 +102,22 @@ internal class TypesafeDerivationToolImpl(private val derivation: Derivation) : 
         hdIndex: Int,
         encryptionIndex: Int,
         returnSecret: Boolean
-    ): ChannelKeys = ChannelKeys(derivation.getVerusEncryptionAddress(
-            seed = seed,
-            spendingKey = spendingKey,
-            hdIndex = hdIndex,
-            encryptionIndex = encryptionIndex,
-            fromId = fromId,
-            toId = toId,
-            returnSecret = returnSecret
-        )
-    )
+    ): ChannelKeys = ChannelKeys(derivation.getVerusEncryptionAddress(seed, spendingKey, hdIndex, encryptionIndex, fromId, toId, returnSecret))
 
-    override suspend fun encryptVerusMessage(
-        address: String,
-        message: String,
+    override suspend fun encryptVerusData(
+        address: ByteArray,
+        encryptedData: ByteArray,
         returnSsk: Boolean
     ): EncryptedPayload {
-        // These parameters don't need conversion, so we just pass them through.
-        return derivation.encryptVerusMessage(address, message, returnSsk)
+        return derivation.encryptVerusDataD(address, encryptedData, returnSsk)
     }
 
-    override suspend fun decryptVerusMessage(
-        fvkHex: String?,
-        epkHex: String?,
-        ciphertextHex: String,
-        sskHex: String?
-    ): String {
-        // These parameters also don't need conversion, so we just pass them through.
-        return derivation.decryptVerusMessage(fvkHex, epkHex, ciphertextHex, sskHex)
-    }
+
+    override suspend fun decryptVerusData(
+        ivkBytes: ByteArray?,
+        ephemeralPublicKeyBytes: ByteArray?,
+        encryptedData: ByteArray,
+        symmetricKeyBytes: ByteArray?
+    ): ByteArray {return derivation.decryptVerusDataD(ivkBytes, ephemeralPublicKeyBytes, encryptedData, symmetricKeyBytes)}
+    
 }

@@ -30,7 +30,7 @@ data class LightWalletEndpointInfoUnsafe(
             lowercase(Locale.ROOT).run {
                 when {
                     contains("vrsc") -> "mainnet"
-                    contains("test") -> "testnet"
+                    contains("vrsctest") -> "testnet"
                     else -> this
                 }
             }

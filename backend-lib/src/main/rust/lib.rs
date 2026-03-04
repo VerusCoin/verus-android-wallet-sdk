@@ -27,7 +27,6 @@ use verus_zfunc::{
         z_getencryptionaddress,
         encrypt_data,
         decrypt_data,
-        DecryptParams,
  };
 //use chacha20poly1305::{ChaCha20Poly1305, KeyInit, AeadInPlace, Key};
 
@@ -1053,7 +1052,7 @@ pub extern "C" fn Java_cash_z_ecc_android_sdk_internal_jni_RustDerivationTool_en
         let rust_return_ssk = return_ssk == JNI_TRUE;            // ← convert jboolean → bool
 
         // only reference of unencrypted data
-        let encrypted_payload = encrypt_data(payment_address, rust_data, rust_return_ssk)
+        let encrypted_payload = encrypt_data(&payment_address, &rust_data, rust_return_ssk)
             .map_err(|e| anyhow!("encrypt_data failed: {}", e))?;
 
 
@@ -1088,7 +1087,7 @@ pub extern "C" fn Java_cash_z_ecc_android_sdk_internal_jni_RustDerivationTool_de
         _class: JObject<'local>,
         ivk_bytes: JByteArray<'local>, //ivk bytes
         ephemeral_public_key_hex: JByteArray<'local>,   // epk bytes
-        data_bytes: JByteArray,            
+        data_bytes: JByteArray<'local>,            
         symmetric_key_hex: JByteArray<'local>,          
     ) -> jbyteArray {
     let res = catch_unwind(&mut env, |env| {
@@ -1115,18 +1114,19 @@ pub extern "C" fn Java_cash_z_ecc_android_sdk_internal_jni_RustDerivationTool_de
                 .map_err(|_| anyhow!("ssk must be exactly 32 bytes"))?;  // ← closure
             Some(Secret::new(arr))
         };
-        // Simplified parameters: 
-        let params = DecryptParams {
+        /*let params = DecryptParams {
             ivk_bytes: ivk,
             epk_bytes: epk,
             data_to_decrypt: SecretVec::new(env.convert_byte_array(&data_bytes)?), // assuming data_bytes is actually byte-encoded ciphertext
             symmetric_key_bytes: ssk,
-        };
+        };*/
 
-        let decrypted = decrypt_data(params) // this function name is changed
+        let data_to_decrypt = SecretVec::new(env.convert_byte_array(data_bytes)?);
+
+        let decrypted = decrypt_data(ivk.as_ref(), epk.as_ref(), &data_to_decrypt, ssk.as_ref()) // this function name is changed
                     .map_err(|e| anyhow!("decrypt failed: {}", e))?;
 
-        let output = env.byte_array_from_slice(&decrypted)?;
+        let output = env.byte_array_from_slice(&decrypted.expose_secret().as_slice())?;
         Ok(output.into_raw())
     });
 

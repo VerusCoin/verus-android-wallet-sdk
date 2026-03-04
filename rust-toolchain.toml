@@ -1,5 +1,5 @@
 [toolchain]
-channel = "stable"
+channel = "1.81.0"
 targets = [
     "armv7-linux-androideabi",
     "aarch64-linux-android",

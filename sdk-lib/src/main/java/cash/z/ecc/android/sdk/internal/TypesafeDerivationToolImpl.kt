@@ -11,7 +11,6 @@ import cash.z.ecc.android.sdk.model.ZcashNetwork
 import cash.z.ecc.android.sdk.tool.DerivationTool
 import cash.z.ecc.android.sdk.internal.ext.Hex
 import cash.z.ecc.android.sdk.model.EncryptedPayload
-import cash.z.ecc.android.sdk.internal.model.JniChannelKeys
 
 internal class TypesafeDerivationToolImpl(private val derivation: Derivation) : DerivationTool {
     override suspend fun deriveUnifiedFullViewingKeys(

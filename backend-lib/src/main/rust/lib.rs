@@ -370,8 +370,8 @@ fn encode_extsk<'a>(
 
 pub fn encode_channel_keys<'a>(
     env: &mut JNIEnv<'a>,
-    address: &PaymentAddress, // making this specific 
-    extfvk_bytes: &Secret<[u8;169]>, // reverting to fixed size array to zeroize after use
+    address: &PaymentAddress, // TODO: (Biz) do we need this as bytes in return functiion? 
+    extfvk_bytes: &Secret<[u8; 169]>,
     spending_key_bytes: Option<&Secret<[u8; 169]>>,
     ivk_bytes: &Secret<[u8; 32]>,
 ) -> jni::errors::Result<JObject<'a>> {
@@ -961,7 +961,9 @@ pub extern "C" fn Java_cash_z_ecc_android_sdk_internal_jni_RustDerivationTool_ge
     });
     unwrap_exc_or(&mut env, res, ptr::null_mut())
 }
+
 #[no_mangle]
+#[allow(non_snake_case)]
 pub extern "C" fn Java_cash_z_ecc_android_sdk_internal_jni_RustDerivationTool_zGetEncryptionAddress<'local>(
     mut env: JNIEnv<'local>,
     _class: JObject<'local>,
@@ -974,7 +976,7 @@ pub extern "C" fn Java_cash_z_ecc_android_sdk_internal_jni_RustDerivationTool_zG
     return_secret: jboolean,
 ) -> jobject {
     let res = catch_unwind(&mut env, |env| {
-        let _span = tracing::info_span!("RustDerivationTool.getVEncryptionAddress").entered();
+        let _span = tracing::info_span!("RustDerivationTool.getVerusEncryptionAddress").entered();
         if hd_index < -1 {
             // -1 is valid here, because we pass this through as sentinel for None conversion, when we do not have 
             // a meaningful index scenario (i.e. extsk-based derivation carries hdIndex with it inherently)
@@ -1024,7 +1026,7 @@ pub extern "C" fn Java_cash_z_ecc_android_sdk_internal_jni_RustDerivationTool_zG
         )?;
         Ok(result.into_raw())
     });
-   unwrap_exc_or(&mut env, res, std::ptr::null_mut())
+    unwrap_exc_or(&mut env, res, std::ptr::null_mut())
 }
 
 #[no_mangle]

@@ -10,7 +10,6 @@ publish = false
 edition = "2018"
 rust-version = "1.77"
 
-
 [dependencies]
 hdwallet = "0.4"
 hdwallet-bitcoin = "0.4"

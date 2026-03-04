@@ -7,7 +7,6 @@ import cash.z.ecc.android.sdk.internal.model.JniChannelKeys
 
 import cash.z.ecc.android.sdk.model.EncryptedPayload
 
-
 class RustDerivationTool private constructor() : Derivation {
     override fun deriveUnifiedFullViewingKeys(
         seed: ByteArray,

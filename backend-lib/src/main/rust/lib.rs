@@ -369,17 +369,19 @@ fn encode_extsk<'a>(
 
 pub fn encode_channel_keys<'a>(
     env: &mut JNIEnv<'a>,
-    address: &PaymentAddress, // TODO: (Biz) do we need this as bytes in return functiion? 
+    //address: &PaymentAddress, // TODO: (Biz) do we need this as bytes in return functiion? 
+    address: &String,
     extfvk_bytes: &Secret<[u8; 169]>,
     spending_key_bytes: Option<&Secret<[u8; 169]>>,
     ivk_bytes: &Secret<[u8; 32]>,
 ) -> jni::errors::Result<JObject<'a>> {
 
-    let address_java = env.byte_array_from_slice(&address.to_bytes())?;
+    let address_java = env.new_string(address)?;
+    //let address_java = env.byte_array_from_slice(&address.to_bytes())?;
 
     let fvk_java = env.byte_array_from_slice(extfvk_bytes.expose_secret().as_slice())?;
 
-    let ivk_java = env.byte_array_from_slice(ivk_bytes.expose_secret())?;
+    let ivk_java = env.byte_array_from_slice(ivk_bytes.expose_secret().as_slice())?;
 
     let sk_java = match spending_key_bytes {
         Some(sk) => env.byte_array_from_slice(&sk.expose_secret().as_slice())?.into(),
@@ -388,7 +390,7 @@ pub fn encode_channel_keys<'a>(
 
     Ok(env.new_object(
         "cash/z/ecc/android/sdk/internal/model/JniChannelKeys",
-        "(L[B[B[B[B)V",
+        "(Ljava/lang/String;[B[B[B)V",
         &[
             JValue::Object(&address_java),
             JValue::Object(&fvk_java),

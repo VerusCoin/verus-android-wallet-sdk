@@ -8,7 +8,7 @@ import androidx.annotation.Keep
  */
 @Keep
 class JniChannelKeys(
-    val address: ByteArray,
+    val address: String,
 
     val extendedFullViewingKeyBytes: ByteArray,
 
@@ -26,7 +26,7 @@ class JniChannelKeys(
 
         other as JniChannelKeys
 
-        if (!address.contentEquals(other.address)) return false
+        if (address != other.address) return false
         if (!extendedFullViewingKeyBytes.contentEquals(other.extendedFullViewingKeyBytes)) return false
 
         if (!internalViewingKeyBytes.contentEquals(other.internalViewingKeyBytes)) return false
@@ -41,7 +41,7 @@ class JniChannelKeys(
     }
 
     override fun hashCode(): Int {
-        var result = address.contentHashCode()
+        var result = address.hashCode()
         result = 31 * result + extendedFullViewingKeyBytes.contentHashCode()
         result = 31 * result + internalViewingKeyBytes.contentHashCode()
         result = 31 * result + (spendingKeyBytes?.contentHashCode() ?: 0)

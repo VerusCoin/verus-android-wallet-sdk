@@ -12,7 +12,7 @@ import cash.z.ecc.android.sdk.internal.model.JniChannelKeys
  * The underlying byte encodings are unstable and MUST NOT be exposed to users.
  */
 class ChannelKeys private constructor(
-    private val address: FirstClassByteArray,
+    private val address: String,
 
     private val extendedFullViewingKeyBytes: FirstClassByteArray,
 
@@ -21,14 +21,14 @@ class ChannelKeys private constructor(
     private val spendingKeyBytes: FirstClassByteArray? = null
 ) {
     internal constructor(jni: JniChannelKeys) : this(
-        address = FirstClassByteArray(jni.address.copyOf()),
+        address = jni.address.copyOf(),
         extendedFullViewingKeyBytes = FirstClassByteArray(jni.extendedFullViewingKeyBytes.copyOf()),
         internalViewingKeyBytes = FirstClassByteArray(jni.internalViewingKeyBytes.copyOf()),
         spendingKeyBytes = jni.spendingKeyBytes?.let { FirstClassByteArray(it.copyOf()) }
     )
 
     /* copy functions are for internal use only */
-    fun copyAddress(): ByteArray = address.byteArray.copyOf()
+    fun copyAddress(): String = address.copyOf()
 
     fun copyExtendedFullViewingKeyBytes(): ByteArray = extendedFullViewingKeyBytes.byteArray.copyOf()
 
@@ -62,11 +62,12 @@ class ChannelKeys private constructor(
 
     companion object {
         suspend fun new(
-            address: ByteArray,
+            address: String,
             extendedFullViewingKeyBytes: ByteArray,
             internalViewingKeyBytes: ByteArray,
             spendingKeyBytes: ByteArray? = null
         ): Result<ChannelKeys> {
+            val addressCopy = address.copyOf()
             val xfvkCopy = extendedFullViewingKeyBytes.copyOf()
             val ivkCopy = internalViewingKeyBytes.copyOf()
             val skCopy = spendingKeyBytes?.copyOf()
@@ -75,10 +76,10 @@ class ChannelKeys private constructor(
 
             return runCatching {
                 // TODO: Add once implemented
-                // require(RustBackend.validateChannelKeys(address, xfvkCopy, ivkCopy, skCopy))
+                // require(RustBackend.validateChannelKeys(addressCopy, xfvkCopy, ivkCopy, skCopy))
 
                 ChannelKeys(
-                    address = FirstClassByteArray(address),
+                    address = addressCopy,
                     extendedFullViewingKeyBytes = FirstClassByteArray(xfvkCopy),
                     internalViewingKeyBytes = FirstClassByteArray(ivkCopy),
                     spendingKeyBytes = skCopy?.let { FirstClassByteArray(it) }

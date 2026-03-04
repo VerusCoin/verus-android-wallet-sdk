@@ -26,7 +26,7 @@ data class ZcashNetwork(
         val Testnet =
             ZcashNetwork(
                 ID_TESTNET,
-                "testnet",
+                "vrsctest",
                 saplingActivationHeight = BlockHeight(1),
                 orchardActivationHeight = BlockHeight(4_000_000_000) // Max value java will acccept here is 4,294,967,294 
             )

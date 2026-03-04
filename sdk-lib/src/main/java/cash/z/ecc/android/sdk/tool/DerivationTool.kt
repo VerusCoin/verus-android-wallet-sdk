@@ -169,10 +169,10 @@ interface DerivationTool {
     suspend fun getVerusEncryptionAddress(
         seed: ByteArray?,
         spendingKey: ByteArray?,
-        hdIndex: Int = 0,
-        encryptionIndex: Int = 0,
         fromId: ByteArray?,
         toId: ByteArray?,
+        hdIndex: Int = 0,
+        encryptionIndex: Int = 0,
         returnSecret: Boolean = false
     ): ChannelKeys
 

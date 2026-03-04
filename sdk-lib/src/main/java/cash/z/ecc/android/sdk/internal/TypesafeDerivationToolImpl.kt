@@ -97,10 +97,10 @@ internal class TypesafeDerivationToolImpl(private val derivation: Derivation) : 
     override suspend fun getVerusEncryptionAddress(
         seed: ByteArray?,
         spendingKey: ByteArray?,
-        hdIndex: Int,
-        encryptionIndex: Int,
         fromId: ByteArray?,
         toId: ByteArray?,
+        hdIndex: Int,
+        encryptionIndex: Int,
         returnSecret: Boolean
     ): ChannelKeys = ChannelKeys(derivation.getVerusEncryptionAddress(seed, spendingKey, hdIndex, encryptionIndex, fromId, toId, returnSecret))
 

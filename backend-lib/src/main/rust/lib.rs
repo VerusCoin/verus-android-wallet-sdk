@@ -1087,8 +1087,8 @@ pub extern "C" fn Java_cash_z_ecc_android_sdk_internal_jni_RustDerivationTool_en
 pub extern "C" fn Java_cash_z_ecc_android_sdk_internal_jni_RustDerivationTool_decryptVData<'local>(
         mut env: JNIEnv<'local>,
         _class: JObject<'local>,
-        ivk_bytes: JByteArray<'local>, //ivk bytes
-        ephemeral_public_key_hex: JByteArray<'local>,   // epk bytes
+        ivk_bytes: JByteArray<'local>,
+        ephemeral_public_key_hex: JByteArray<'local>,
         data_bytes: JByteArray<'local>,            
         symmetric_key_hex: JByteArray<'local>,          
     ) -> jbyteArray {
@@ -1096,7 +1096,6 @@ pub extern "C" fn Java_cash_z_ecc_android_sdk_internal_jni_RustDerivationTool_de
         
         let _span = tracing::info_span!("RustDerivationTool.decryptVerusDataD").entered();
 
-        // decode bech32 ivk string → 32 raw bytes and do checks
         let ivk: Option<Secret<[u8; 32]>> = if ivk_bytes.is_null() { None } else {
             let arr: [u8; 32] = env.convert_byte_array(&ivk_bytes)?
                 .try_into()
@@ -1104,7 +1103,6 @@ pub extern "C" fn Java_cash_z_ecc_android_sdk_internal_jni_RustDerivationTool_de
             Some(Secret::new(arr))
         };
         
-        // decode hex string of ephemeral public key → 32 raw bytes
         let epk: Option<[u8; 32]> = if ephemeral_public_key_hex.is_null() { None } else {
             Some(env.convert_byte_array(&ephemeral_public_key_hex)?
                 .try_into()
@@ -1113,19 +1111,13 @@ pub extern "C" fn Java_cash_z_ecc_android_sdk_internal_jni_RustDerivationTool_de
         let ssk: Option<Secret<[u8; 32]>> = if symmetric_key_hex.is_null() { None } else {
             let arr: [u8; 32] = env.convert_byte_array(&symmetric_key_hex)?
                 .try_into()
-                .map_err(|_| anyhow!("ssk must be exactly 32 bytes"))?;  // ← closure
+                .map_err(|_| anyhow!("ssk must be exactly 32 bytes"))?;
             Some(Secret::new(arr))
         };
-        /*let params = DecryptParams {
-            ivk_bytes: ivk,
-            epk_bytes: epk,
-            data_to_decrypt: SecretVec::new(env.convert_byte_array(&data_bytes)?), // assuming data_bytes is actually byte-encoded ciphertext
-            symmetric_key_bytes: ssk,
-        };*/
 
         let data_to_decrypt = SecretVec::new(env.convert_byte_array(data_bytes)?);
 
-        let decrypted = decrypt_data(ivk.as_ref(), epk.as_ref(), &data_to_decrypt, ssk.as_ref()) // this function name is changed
+        let decrypted = decrypt_data(ivk.as_ref(), epk.as_ref(), &data_to_decrypt, ssk.as_ref())
                     .map_err(|e| anyhow!("decrypt failed: {}", e))?;
 
         let output = env.byte_array_from_slice(&decrypted.expose_secret().as_slice())?;

@@ -1040,7 +1040,7 @@ pub extern "C" fn Java_cash_z_ecc_android_sdk_internal_jni_RustDerivationTool_en
     ) -> jobject {
     let res = catch_unwind(&mut env, |env| {
         
-        let _span = tracing::info_span!("RustDerivationTool.encryptVerusDataD").entered();
+        let _span = tracing::info_span!("RustDerivationTool.encryptVerusData").entered();
 
         // convert 43 bytes directly to PaymentAddress - no bech32 round trip
         let addr_bytes: [u8; 43] = env.convert_byte_array(&address_bytes)?
@@ -1050,8 +1050,8 @@ pub extern "C" fn Java_cash_z_ecc_android_sdk_internal_jni_RustDerivationTool_en
         let payment_address = PaymentAddress::from_bytes(&addr_bytes)
             .ok_or_else(|| anyhow!("Invalid PaymentAddress bytes"))?;
         
-        let rust_data = SecretVec::new(env.convert_byte_array(&data_to_encrypt)?); // ← convert JByteArray → SecretVec<u8>
-        let rust_return_ssk = return_ssk == JNI_TRUE;            // ← convert jboolean → bool
+        let rust_data = SecretVec::new(env.convert_byte_array(&data_to_encrypt)?);
+        let rust_return_ssk = return_ssk == JNI_TRUE;
 
         // only reference of unencrypted data
         let encrypted_payload = encrypt_data(&payment_address, &rust_data, rust_return_ssk)
@@ -1069,7 +1069,7 @@ pub extern "C" fn Java_cash_z_ecc_android_sdk_internal_jni_RustDerivationTool_en
 
         let result_obj = env.new_object(
             "cash/z/ecc/android/sdk/model/EncryptedPayload",
-            "L([B[B[B)V",
+            "([B[B[B)V",
             &[
                 JValue::Object(&epk_java),
                 JValue::Object(&secretdata_java),

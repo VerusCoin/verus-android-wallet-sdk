@@ -131,7 +131,7 @@ fun Derivation.encryptVerusData(
     address: ByteArray,
     data: ByteArray,
     returnSsk: Boolean
-): EncryptedPayload  = encryptVerusDataD(address, data, returnSsk)
+): EncryptedPayload  = EncryptedPayload(encryptVerusDataD(address, data, returnSsk))
 
 
 fun Derivation.decryptVerusData(

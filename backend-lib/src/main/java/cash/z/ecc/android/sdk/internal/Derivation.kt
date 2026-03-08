@@ -1,10 +1,9 @@
 package cash.z.ecc.android.sdk.internal
 
+import cash.z.ecc.android.sdk.internal.model.JniChannelKeys
+import cash.z.ecc.android.sdk.internal.model.JniEncryptedPayload
 import cash.z.ecc.android.sdk.internal.model.JniUnifiedSpendingKey
 import cash.z.ecc.android.sdk.internal.model.JniShieldedSpendingKey
-import cash.z.ecc.android.sdk.internal.model.JniSharedSecret
-import cash.z.ecc.android.sdk.internal.model.JniChannelKeys
-import cash.z.ecc.android.sdk.model.EncryptedPayload
 
 interface Derivation {
     fun deriveUnifiedAddress(
@@ -101,7 +100,7 @@ interface Derivation {
         addressBytes: ByteArray,
         data: ByteArray,
         returnSsk: Boolean
-    ): EncryptedPayload
+    ): JniEncryptedPayload
 
     fun decryptVerusDataD(
         ivkBytes: ByteArray?,

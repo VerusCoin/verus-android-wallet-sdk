@@ -112,7 +112,7 @@ class RustDerivationTool private constructor() : Derivation {
         addressBytes: ByteArray, // This can be a byte array, is of type  SaplingPaymentAddress in encryptResponseToAddress, we can use fromBuffer method
         data: ByteArray,
         returnSsk: Boolean
-    ): EncryptedPayload = encryptVData(addressBytes, data, returnSsk)
+    ): JniEncryptedPayload = encryptVData(addressBytes, data, returnSsk)
 
     override fun decryptVerusDataD(
         ivkBytes: ByteArray?,
@@ -218,7 +218,7 @@ class RustDerivationTool private constructor() : Derivation {
             addressBytes: ByteArray,
             data: ByteArray,
             returnSsk: Boolean
-        ): EncryptedPayload
+        ): JniEncryptedPayload
 
         @JvmStatic
         private external fun decryptVData(

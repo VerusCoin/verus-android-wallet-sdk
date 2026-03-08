@@ -102,15 +102,13 @@ internal class TypesafeDerivationToolImpl(private val derivation: Derivation) : 
         hdIndex: Int,
         encryptionIndex: Int,
         returnSecret: Boolean
-    ): ChannelKeys = ChannelKeys(derivation.getVerusEncryptionAddress(seed, spendingKey, hdIndex, encryptionIndex, fromId, toId, returnSecret))
+    ): ChannelKeys = derivation.getVerusEncryptionAddress(seed, spendingKey, hdIndex, encryptionIndex, fromId, toId, returnSecret)
 
     override suspend fun encryptVerusData(
         address: ByteArray,
         encryptedData: ByteArray,
         returnSsk: Boolean
-    ): EncryptedPayload {
-        return derivation.encryptVerusDataD(address, encryptedData, returnSsk)
-    }
+    ): EncryptedPayload = derivation.encryptVerusDataD(address, encryptedData, returnSsk)
 
 
     override suspend fun decryptVerusData(

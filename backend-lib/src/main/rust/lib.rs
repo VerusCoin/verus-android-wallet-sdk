@@ -400,6 +400,33 @@ pub fn encode_channel_keys<'a>(
     )?)
 }
 
+pub fn encode_encrypted_payload<'a>(
+    env: &mut JNIEnv<'a>,
+    ephemeral_public_key_bytes: &[u8; 32],
+    encrypted_data_bytes: &[u8],
+    symmetric_key_bytes: Option<&Secret<[u8; 32]>>,
+) -> jni::errors::Result<JObject<'a>> {
+
+    let epk_java = env.byte_array_from_slice(ephemeral_public_key_bytes)?;
+
+    let encrypted_data_java = env.byte_array_from_slice(encrypted_data_bytes)?;
+
+    let ssk_java = match symmetric_key_bytes {
+        Some(ssk) => env.byte_array_from_slice(&ssk.expose_secret().as_slice())?.into(),
+        None => JObject::null(),
+    };
+
+    Ok(env.new_object(
+        "cash/z/ecc/android/sdk/internal/model/JniEncryptedPayload",
+        "(Ljava/lang/String;[B[B[B)V",
+        &[
+            JValue::Object(&epk_java),
+            JValue::Object(&encrypted_data_java),
+            JValue::Object(&ssk_java),
+        ],
+    )?)
+}
+
 fn decode_usk(env: &JNIEnv, usk: JByteArray) -> anyhow::Result<UnifiedSpendingKey> {
     let usk_bytes = SecretVec::new(env.convert_byte_array(usk).unwrap());
 
@@ -1057,27 +1084,13 @@ pub extern "C" fn Java_cash_z_ecc_android_sdk_internal_jni_RustDerivationTool_en
         let encrypted_payload = encrypt_data(&payment_address, &rust_data, rust_return_ssk)
             .map_err(|e| anyhow!("encrypt_data failed: {}", e))?;
 
+        let result = encode_encrypted_payload(
+            env,
+            &encrypted_payload.ephemeral_public_key, 
+            &encrypted_payload.encrypted_data,
+            encrypted_payload.symmetric_key.as_ref())?;
 
-        // convert the Rust result into a new Java `EncryptedPayload` object
-        let epk_java = env.byte_array_from_slice(&encrypted_payload.ephemeral_public_key)?;
-        let secretdata_java = env.byte_array_from_slice(&encrypted_payload.encrypted_data)?;
-
-        let ssk_java = match encrypted_payload.symmetric_key {
-            Some(ssk) => env.byte_array_from_slice(ssk.expose_secret())?.into(),
-            None => JObject::null(),
-        };
-
-        let result_obj = env.new_object(
-            "cash/z/ecc/android/sdk/model/EncryptedPayload",
-            "([B[B[B)V",
-            &[
-                JValue::Object(&epk_java),
-                JValue::Object(&secretdata_java),
-                JValue::Object(&ssk_java),
-            ],
-        )?;
-
-        Ok(result_obj.into_raw())
+        Ok(result.into_raw())
     });
 
     unwrap_exc_or(&mut env, res, std::ptr::null_mut())

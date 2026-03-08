@@ -418,7 +418,7 @@ pub fn encode_encrypted_payload<'a>(
 
     Ok(env.new_object(
         "cash/z/ecc/android/sdk/internal/model/JniEncryptedPayload",
-        "(Ljava/lang/String;[B[B[B)V",
+        "([B[B[B)V",
         &[
             JValue::Object(&epk_java),
             JValue::Object(&encrypted_data_java),

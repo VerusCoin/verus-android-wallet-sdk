@@ -17,7 +17,7 @@ use jni::{
     JNIEnv,
 };
 use prost::Message;
-use sapling::zip32::{ExtendedFullViewingKey, ExtendedSpendingKey};
+use sapling::zip32::ExtendedSpendingKey;
 use secrecy::{ExposeSecret, SecretVec, Secret};
 use tracing::{debug, error};
 use tracing_subscriber::prelude::*;

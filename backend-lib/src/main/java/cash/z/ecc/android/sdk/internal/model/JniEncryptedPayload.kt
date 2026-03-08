@@ -25,7 +25,6 @@ class JniEncryptedPayload(
 
         other as JniEncryptedPayload
 
-        if (address != other.address) return false
         if (!ephemeralPublicKeyBytes.contentEquals(other.ephemeralPublicKeyBytes)) return false
 
         if (!encryptedDataBytes.contentEquals(other.encryptedDataBytes)) return false
@@ -40,8 +39,7 @@ class JniEncryptedPayload(
     }
 
     override fun hashCode(): Int {
-        var result = address.hashCode()
-        result = 31 * result + ephemeralPublicKeyBytes.contentHashCode()
+        var result = ephemeralPublicKeyBytes.contentHashCode()
         result = 31 * result + encryptedDataBytes.contentHashCode()
         result = 31 * result + (symmetricKeyBytes?.contentHashCode() ?: 0)
         return result

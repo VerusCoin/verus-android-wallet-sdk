@@ -2,6 +2,7 @@ package cash.z.ecc.android.sdk.internal
 
 import cash.z.ecc.android.sdk.model.Account
 import cash.z.ecc.android.sdk.model.EphemeralPublicKey
+import cash.z.ecc.android.sdk.model.EncryptedPayload
 import cash.z.ecc.android.sdk.model.UnifiedFullViewingKey
 import cash.z.ecc.android.sdk.model.UnifiedSpendingKey
 import cash.z.ecc.android.sdk.model.ShieldedSpendingKey
@@ -10,7 +11,6 @@ import cash.z.ecc.android.sdk.model.ChannelKeys
 import cash.z.ecc.android.sdk.model.ZcashNetwork
 import cash.z.ecc.android.sdk.tool.DerivationTool
 import cash.z.ecc.android.sdk.internal.ext.Hex
-import cash.z.ecc.android.sdk.model.EncryptedPayload
 
 internal class TypesafeDerivationToolImpl(private val derivation: Derivation) : DerivationTool {
     override suspend fun deriveUnifiedFullViewingKeys(
@@ -102,13 +102,13 @@ internal class TypesafeDerivationToolImpl(private val derivation: Derivation) : 
         hdIndex: Int,
         encryptionIndex: Int,
         returnSecret: Boolean
-    ): ChannelKeys = derivation.getVerusEncryptionAddress(seed, spendingKey, hdIndex, encryptionIndex, fromId, toId, returnSecret)
+    ): ChannelKeys = ChannelKeys(derivation.getVerusEncryptionAddress(seed, spendingKey, hdIndex, encryptionIndex, fromId, toId, returnSecret))
 
     override suspend fun encryptVerusData(
         address: ByteArray,
         encryptedData: ByteArray,
         returnSsk: Boolean
-    ): EncryptedPayload = derivation.encryptVerusDataD(address, encryptedData, returnSsk)
+    ): EncryptedPayload = EncryptedPayload(derivation.encryptVerusDataD(address, encryptedData, returnSsk))
 
 
     override suspend fun decryptVerusData(

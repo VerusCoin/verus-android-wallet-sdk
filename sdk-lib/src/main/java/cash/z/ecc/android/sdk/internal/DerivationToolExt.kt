@@ -9,6 +9,7 @@ import cash.z.ecc.android.sdk.model.ShieldedSpendingKey
 import cash.z.ecc.android.sdk.model.SharedSecret
 import cash.z.ecc.android.sdk.model.ZcashNetwork
 import cash.z.ecc.android.sdk.model.ChannelKeys
+import cash.z.ecc.android.sdk.model.DecryptedData
 import cash.z.ecc.android.sdk.model.EncryptedPayload
 
 fun Derivation.deriveUnifiedAddress(
@@ -137,5 +138,5 @@ fun Derivation.decryptVerusData(
     ephemeralPublicKeyBytes: ByteArray?,
     dataToDecrypt: ByteArray,
     symmetricKeyBytes: ByteArray?
-): ByteArray = decryptVerusDataD(ivkBytes, ephemeralPublicKeyBytes, dataToDecrypt, symmetricKeyBytes)
+): DecryptedData = DecryptedData(decryptVerusDataD(ivkBytes, ephemeralPublicKeyBytes, dataToDecrypt, symmetricKeyBytes))
 

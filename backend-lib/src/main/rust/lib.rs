@@ -400,6 +400,20 @@ pub fn encode_channel_keys<'a>(
     )?)
 }
 
+pub fn encode_decrypted_data<'a>(
+    env: &mut JNIEnv<'a>,
+    decrypted_data: &[u8],
+) -> jni::errors::Result<JObject<'a>> {
+    let decrypted_data_java = env.byte_array_from_slice(decrypted_data)?;
+    Ok(env.new_object(
+        "cash/z/ecc/android/sdk/internal/model/JniDecryptedData",
+        "([B)V",
+        &[
+            JValue::Object(&decrypted_data_java),
+        ],
+    )?)
+}
+
 pub fn encode_encrypted_payload<'a>(
     env: &mut JNIEnv<'a>,
     ephemeral_public_key_bytes: &[u8; 32],
@@ -1133,7 +1147,7 @@ pub extern "C" fn Java_cash_z_ecc_android_sdk_internal_jni_RustDerivationTool_de
         let decrypted = decrypt_data(ivk.as_ref(), epk.as_ref(), &data_to_decrypt, ssk.as_ref())
                     .map_err(|e| anyhow!("decrypt failed: {}", e))?;
 
-        let output = env.byte_array_from_slice(&decrypted.expose_secret().as_slice())?;
+        let output = encode_decrypted_data(env, &decrypted.expose_secret().as_slice())?;
         Ok(output.into_raw())
     });
 

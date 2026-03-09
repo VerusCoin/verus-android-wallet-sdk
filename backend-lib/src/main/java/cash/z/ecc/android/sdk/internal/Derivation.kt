@@ -1,6 +1,7 @@
 package cash.z.ecc.android.sdk.internal
 
 import cash.z.ecc.android.sdk.internal.model.JniChannelKeys
+import cash.z.ecc.android.sdk.internal.model.JniDecryptedData
 import cash.z.ecc.android.sdk.internal.model.JniEncryptedPayload
 import cash.z.ecc.android.sdk.internal.model.JniUnifiedSpendingKey
 import cash.z.ecc.android.sdk.internal.model.JniShieldedSpendingKey
@@ -107,7 +108,7 @@ interface Derivation {
         ephemeralPublicKeyBytes: ByteArray?,
         dataToDecrypt: ByteArray,
         symmetricKeyBytes: ByteArray?
-    ): ByteArray
+    ): JniDecryptedData
 
     companion object {
         const val DEFAULT_NUMBER_OF_ACCOUNTS = 1

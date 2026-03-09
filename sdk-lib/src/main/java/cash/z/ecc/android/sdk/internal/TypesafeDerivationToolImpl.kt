@@ -1,6 +1,7 @@
 package cash.z.ecc.android.sdk.internal
 
 import cash.z.ecc.android.sdk.model.Account
+import cash.z.ecc.android.sdk.model.DecryptedData
 import cash.z.ecc.android.sdk.model.EphemeralPublicKey
 import cash.z.ecc.android.sdk.model.EncryptedPayload
 import cash.z.ecc.android.sdk.model.UnifiedFullViewingKey
@@ -116,6 +117,6 @@ internal class TypesafeDerivationToolImpl(private val derivation: Derivation) : 
         ephemeralPublicKeyBytes: ByteArray?,
         encryptedData: ByteArray,
         symmetricKeyBytes: ByteArray?
-    ): ByteArray {return derivation.decryptVerusDataD(ivkBytes, ephemeralPublicKeyBytes, encryptedData, symmetricKeyBytes)}
+    ): DecryptedData = DecryptedData(derivation.decryptVerusDataD(ivkBytes, ephemeralPublicKeyBytes, encryptedData, symmetricKeyBytes))
     
 }

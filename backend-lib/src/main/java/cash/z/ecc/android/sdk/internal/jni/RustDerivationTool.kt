@@ -2,6 +2,7 @@ package cash.z.ecc.android.sdk.internal.jni
 
 import cash.z.ecc.android.sdk.internal.Derivation
 import cash.z.ecc.android.sdk.internal.model.JniChannelKeys
+import cash.z.ecc.android.sdk.internal.model.JniDecryptedData
 import cash.z.ecc.android.sdk.internal.model.JniEncryptedPayload
 import cash.z.ecc.android.sdk.internal.model.JniUnifiedSpendingKey
 import cash.z.ecc.android.sdk.internal.model.JniShieldedSpendingKey
@@ -118,7 +119,7 @@ class RustDerivationTool private constructor() : Derivation {
         ephemeralPublicKeyBytes: ByteArray?,
         dataToDecrypt: ByteArray,
         symmetricKeyBytes: ByteArray?
-    ): ByteArray = decryptVData(ivkBytes, ephemeralPublicKeyBytes, dataToDecrypt, symmetricKeyBytes)
+    ): JniDecryptedData = decryptVData(ivkBytes, ephemeralPublicKeyBytes, dataToDecrypt, symmetricKeyBytes)
 
     companion object {
         suspend fun new(): Derivation {
@@ -225,6 +226,6 @@ class RustDerivationTool private constructor() : Derivation {
             ephemeralPublicKeyBytes: ByteArray?,
             encyptedData: ByteArray,
             symmetricKeyBytes: ByteArray?
-        ): ByteArray
+        ): JniDecryptedData
     }
 }

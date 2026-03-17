@@ -477,7 +477,7 @@ checksum = "a47c1c47d2f5964e29c61246e81db715514cd532db6b5116a25ea3c03d6780a2"
 [[package]]
 name = "equihash"
 version = "0.2.0"
-source = "git+https://github.com/who-biz/librustzcash?branch=ka_agree-security-fixes#92aef9571d6eb34605242692f8b20637c4900360"
+source = "git+https://github.com/VerusCoin/librustzcash?branch=dev#cf8e11a57dbc4d4a61d7272cf9c699067120ce9a"
 dependencies = [
  "blake2b_simd",
  "byteorder",
@@ -502,7 +502,7 @@ dependencies = [
 [[package]]
 name = "f4jumble"
 version = "0.1.0"
-source = "git+https://github.com/who-biz/librustzcash?branch=ka_agree-security-fixes#92aef9571d6eb34605242692f8b20637c4900360"
+source = "git+https://github.com/VerusCoin/librustzcash?branch=dev#cf8e11a57dbc4d4a61d7272cf9c699067120ce9a"
 dependencies = [
  "blake2b_simd",
 ]
@@ -1057,7 +1057,7 @@ checksum = "c08d65885ee38876c4f86fa503fb49d7b507c2b62552df7c70b2fce627e06381"
 [[package]]
 name = "orchard"
 version = "0.8.0"
-source = "git+https://github.com/who-biz/orchard?branch=ka_agree#ba828a341af01c827a64891393fce6bd128c7754"
+source = "git+https://github.com/VerusCoin/orchard?branch=ka_agree#ba828a341af01c827a64891393fce6bd128c7754"
 dependencies = [
  "aes",
  "bitvec",
@@ -1491,7 +1491,7 @@ dependencies = [
 [[package]]
 name = "sapling-crypto"
 version = "0.1.3"
-source = "git+https://github.com/who-biz/sapling-crypto?branch=ka_agree#4452a3162aad02d6d69b1c7525a98a921307f870"
+source = "git+https://github.com/VerusCoin/sapling-crypto?branch=ka_agree#4452a3162aad02d6d69b1c7525a98a921307f870"
 dependencies = [
  "aes",
  "bellman",
@@ -1923,7 +1923,7 @@ checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
 [[package]]
 name = "verus_zfunc"
 version = "0.1.0"
-source = "git+https://github.com/who-biz/librustzcash?branch=ka_agree-security-fixes#92aef9571d6eb34605242692f8b20637c4900360"
+source = "git+https://github.com/VerusCoin/librustzcash?branch=dev#cf8e11a57dbc4d4a61d7272cf9c699067120ce9a"
 dependencies = [
  "anyhow",
  "bech32 0.9.1",
@@ -2271,7 +2271,7 @@ dependencies = [
 [[package]]
 name = "zcash_address"
 version = "0.3.2"
-source = "git+https://github.com/who-biz/librustzcash?branch=ka_agree-security-fixes#92aef9571d6eb34605242692f8b20637c4900360"
+source = "git+https://github.com/VerusCoin/librustzcash?branch=dev#cf8e11a57dbc4d4a61d7272cf9c699067120ce9a"
 dependencies = [
  "bech32 0.9.1",
  "bs58",
@@ -2297,7 +2297,7 @@ dependencies = [
 [[package]]
 name = "zcash_client_backend"
 version = "0.12.1"
-source = "git+https://github.com/who-biz/librustzcash?branch=ka_agree-security-fixes#92aef9571d6eb34605242692f8b20637c4900360"
+source = "git+https://github.com/VerusCoin/librustzcash?branch=dev#cf8e11a57dbc4d4a61d7272cf9c699067120ce9a"
 dependencies = [
  "base64",
  "bech32 0.9.1",
@@ -2336,7 +2336,7 @@ dependencies = [
 [[package]]
 name = "zcash_client_sqlite"
 version = "0.10.3"
-source = "git+https://github.com/who-biz/librustzcash?branch=ka_agree-security-fixes#92aef9571d6eb34605242692f8b20637c4900360"
+source = "git+https://github.com/VerusCoin/librustzcash?branch=dev#cf8e11a57dbc4d4a61d7272cf9c699067120ce9a"
 dependencies = [
  "bs58",
  "byteorder",
@@ -2369,7 +2369,7 @@ dependencies = [
 [[package]]
 name = "zcash_encoding"
 version = "0.2.0"
-source = "git+https://github.com/who-biz/librustzcash?branch=ka_agree-security-fixes#92aef9571d6eb34605242692f8b20637c4900360"
+source = "git+https://github.com/VerusCoin/librustzcash?branch=dev#cf8e11a57dbc4d4a61d7272cf9c699067120ce9a"
 dependencies = [
  "byteorder",
  "nonempty",
@@ -2387,7 +2387,7 @@ dependencies = [
 [[package]]
 name = "zcash_keys"
 version = "0.2.0"
-source = "git+https://github.com/who-biz/librustzcash?branch=ka_agree-security-fixes#92aef9571d6eb34605242692f8b20637c4900360"
+source = "git+https://github.com/VerusCoin/librustzcash?branch=dev#cf8e11a57dbc4d4a61d7272cf9c699067120ce9a"
 dependencies = [
  "bech32 0.9.1",
  "blake2b_simd",
@@ -2439,7 +2439,7 @@ dependencies = [
 [[package]]
 name = "zcash_note_encryption"
 version = "0.4.1"
-source = "git+https://github.com/who-biz/zcash_note_encryption?branch=ka_agree#96207730586d85bd02aa9199dbf32cebb24bc7a5"
+source = "git+https://github.com/VerusCoin/zcash_note_encryption?branch=ka_agree#96207730586d85bd02aa9199dbf32cebb24bc7a5"
 dependencies = [
  "chacha20",
  "chacha20poly1305",
@@ -2451,7 +2451,7 @@ dependencies = [
 [[package]]
 name = "zcash_primitives"
 version = "0.15.0"
-source = "git+https://github.com/who-biz/librustzcash?branch=ka_agree-security-fixes#92aef9571d6eb34605242692f8b20637c4900360"
+source = "git+https://github.com/VerusCoin/librustzcash?branch=dev#cf8e11a57dbc4d4a61d7272cf9c699067120ce9a"
 dependencies = [
  "aes",
  "bip0039",
@@ -2486,7 +2486,7 @@ dependencies = [
 [[package]]
 name = "zcash_proofs"
 version = "0.15.0"
-source = "git+https://github.com/who-biz/librustzcash?branch=ka_agree-security-fixes#92aef9571d6eb34605242692f8b20637c4900360"
+source = "git+https://github.com/VerusCoin/librustzcash?branch=dev#cf8e11a57dbc4d4a61d7272cf9c699067120ce9a"
 dependencies = [
  "bellman",
  "blake2b_simd",
@@ -2508,7 +2508,7 @@ dependencies = [
 [[package]]
 name = "zcash_protocol"
 version = "0.1.1"
-source = "git+https://github.com/who-biz/librustzcash?branch=ka_agree-security-fixes#92aef9571d6eb34605242692f8b20637c4900360"
+source = "git+https://github.com/VerusCoin/librustzcash?branch=dev#cf8e11a57dbc4d4a61d7272cf9c699067120ce9a"
 dependencies = [
  "document-features",
  "memuse",

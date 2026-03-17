@@ -1,5 +1,8 @@
 package cash.z.ecc.android.sdk.internal
 
+import cash.z.ecc.android.sdk.internal.model.JniChannelKeys
+import cash.z.ecc.android.sdk.internal.model.JniDecryptedData
+import cash.z.ecc.android.sdk.internal.model.JniEncryptedPayload
 import cash.z.ecc.android.sdk.internal.model.JniUnifiedSpendingKey
 import cash.z.ecc.android.sdk.internal.model.JniShieldedSpendingKey
 
@@ -63,6 +66,49 @@ interface Derivation {
         address: String,
         networkId: Int
     ): Boolean
+
+    fun getSymmetricKey(
+        viewingKey: String,
+        ephemeralPublicKey: ByteArray,
+        networkId: Int
+    ): String
+
+    fun generateSymmetricKey(
+        saplingAddress: String,
+        networkId: Int
+    ): String
+
+    fun getEncryptionAddress(
+        seed: ByteArray,
+        fromId: ByteArray,
+        toId: ByteArray,
+        accountIndex: Int,
+        networkId: Int
+    ): String
+
+    fun getVerusEncryptionAddress(
+        seed: ByteArray?,
+        spendingKey: ByteArray?,
+        hdIndex: Int,
+        encryptionIndex: Int,
+        fromId: ByteArray?,
+        toId: ByteArray?,
+        returnSecret: Boolean
+    ): JniChannelKeys
+
+
+    fun encryptVerusDataD(
+        addressBytes: ByteArray,
+        data: ByteArray,
+        returnSsk: Boolean
+    ): JniEncryptedPayload
+
+    fun decryptVerusDataD(
+        ivkBytes: ByteArray?,
+        ephemeralPublicKeyBytes: ByteArray?,
+        dataToDecrypt: ByteArray,
+        symmetricKeyBytes: ByteArray?
+    ): JniDecryptedData
 
     companion object {
         const val DEFAULT_NUMBER_OF_ACCOUNTS = 1

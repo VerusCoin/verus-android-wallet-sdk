@@ -1,6 +1,9 @@
 package cash.z.ecc.android.sdk.internal.jni
 
 import cash.z.ecc.android.sdk.internal.Derivation
+import cash.z.ecc.android.sdk.internal.model.JniChannelKeys
+import cash.z.ecc.android.sdk.internal.model.JniDecryptedData
+import cash.z.ecc.android.sdk.internal.model.JniEncryptedPayload
 import cash.z.ecc.android.sdk.internal.model.JniUnifiedSpendingKey
 import cash.z.ecc.android.sdk.internal.model.JniShieldedSpendingKey
 
@@ -74,6 +77,50 @@ class RustDerivationTool private constructor() : Derivation {
         networkId: Int
     ): String = deriveUnifiedAddressFromViewingKey(viewingKey, networkId = networkId)
 
+    override fun getSymmetricKey(
+        viewingKey: String, 
+        ephemeralPublicKey: ByteArray,
+        networkId: Int
+    ): String =  getSymmetricKeyReceiver(viewingKey, ephemeralPublicKey, networkId = networkId)
+
+    override fun generateSymmetricKey(
+        saplingAddress: String,
+        networkId: Int
+    ): String =  generateSymmetricKeySender(saplingAddress, networkId = networkId)
+
+    override fun getEncryptionAddress(
+        seed: ByteArray,
+        fromId: ByteArray,
+        toId: ByteArray,
+        accountIndex: Int,
+        networkId: Int
+    ): String {
+        TODO("Legacy getEncryptionAddress is not supported. Use getVerusEncryptionAddress instead.")
+    }
+
+    override fun getVerusEncryptionAddress(
+        seed: ByteArray?,
+        spendingKey: ByteArray?,
+        hdIndex: Int,
+        encryptionIndex: Int,
+        fromId: ByteArray?,
+        toId: ByteArray?,
+        returnSecret: Boolean
+    ): JniChannelKeys = zGetEncryptionAddress(seed, spendingKey, hdIndex, encryptionIndex, fromId, toId, returnSecret)
+
+    override fun encryptVerusDataD(
+        addressBytes: ByteArray, // This can be a byte array, is of type  SaplingPaymentAddress in encryptResponseToAddress, we can use fromBuffer method
+        data: ByteArray,
+        returnSsk: Boolean
+    ): JniEncryptedPayload = encryptVData(addressBytes, data, returnSsk)
+
+    override fun decryptVerusDataD(
+        ivkBytes: ByteArray?,
+        ephemeralPublicKeyBytes: ByteArray?,
+        dataToDecrypt: ByteArray,
+        symmetricKeyBytes: ByteArray?
+    ): JniDecryptedData = decryptVData(ivkBytes, ephemeralPublicKeyBytes, dataToDecrypt, symmetricKeyBytes)
+
     companion object {
         suspend fun new(): Derivation {
             RustBackend.loadLibrary()
@@ -141,5 +188,44 @@ class RustDerivationTool private constructor() : Derivation {
             address: String,
             networkId: Int
         ): Boolean
+
+        @JvmStatic
+        private external fun getSymmetricKeyReceiver(
+            vk: String,
+            epk: ByteArray,
+            networkId: Int
+        ): String
+
+        @JvmStatic
+        private external fun generateSymmetricKeySender(
+            saplingAddress: String,
+            networkId: Int
+        ): String
+
+        @JvmStatic
+        private external fun zGetEncryptionAddress(
+            seed: ByteArray?,
+            spendingKey: ByteArray?,
+            hdIndex: Int,
+            encryptionIndex: Int,
+            fromId: ByteArray?,
+            toId: ByteArray?,
+            returnSecret: Boolean
+        ): JniChannelKeys
+
+        @JvmStatic
+        private external fun encryptVData(
+            addressBytes: ByteArray,
+            data: ByteArray,
+            returnSsk: Boolean
+        ): JniEncryptedPayload
+
+        @JvmStatic
+        private external fun decryptVData(
+            ivkBytes: ByteArray?,
+            ephemeralPublicKeyBytes: ByteArray?,
+            encyptedData: ByteArray,
+            symmetricKeyBytes: ByteArray?
+        ): JniDecryptedData
     }
 }

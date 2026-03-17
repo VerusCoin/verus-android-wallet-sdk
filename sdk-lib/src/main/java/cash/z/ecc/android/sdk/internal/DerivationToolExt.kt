@@ -1,12 +1,16 @@
 package cash.z.ecc.android.sdk.internal
 
 import cash.z.ecc.android.sdk.internal.model.JniUnifiedSpendingKey
-//import cash.z.ecc.android.sdk.internal.model.JniShieldedSpendingKey
 import cash.z.ecc.android.sdk.model.Account
+import cash.z.ecc.android.sdk.model.EphemeralPublicKey
 import cash.z.ecc.android.sdk.model.UnifiedFullViewingKey
 import cash.z.ecc.android.sdk.model.UnifiedSpendingKey
 import cash.z.ecc.android.sdk.model.ShieldedSpendingKey
+import cash.z.ecc.android.sdk.model.SharedSecret
 import cash.z.ecc.android.sdk.model.ZcashNetwork
+import cash.z.ecc.android.sdk.model.ChannelKeys
+import cash.z.ecc.android.sdk.model.DecryptedData
+import cash.z.ecc.android.sdk.model.EncryptedPayload
 
 fun Derivation.deriveUnifiedAddress(
     seed: ByteArray,
@@ -82,3 +86,57 @@ fun Derivation.isValidShieldedAddress(
     address: String,
     network: ZcashNetwork
 ): Boolean = isValidShieldedAddress(address, network.id)
+
+fun Derivation.getSymmetricKey(
+    viewingKey: String,
+    ephemeralPublicKey: ByteArray,
+    network: ZcashNetwork
+): String = getSymmetricKey(viewingKey, ephemeralPublicKey, network.id)
+
+fun Derivation.generateSymmetricKey(
+    saplingAddress: String,
+    network: ZcashNetwork
+): String = generateSymmetricKey(saplingAddress, network.id)
+
+fun Derivation.getEncryptionAddress(
+    seed: ByteArray,
+    fromId: ByteArray,
+    toId: ByteArray,
+    accountIndex: Int,
+    network: ZcashNetwork
+): String = getEncryptionAddress(seed, fromId, toId, accountIndex, network.id)
+
+fun Derivation.getVerusEncryptionAddress(
+    seed: ByteArray?,
+    spendingKey: ByteArray?,
+    fromId: ByteArray?,
+    toId: ByteArray?,
+    hdIndex: Int,
+    encryptionIndex: Int,
+    returnSecret: Boolean
+): ChannelKeys = ChannelKeys(getVerusEncryptionAddress(
+        seed = seed,
+        spendingKey = spendingKey,
+        hdIndex = hdIndex,
+        encryptionIndex = encryptionIndex,
+        fromId = fromId,
+        toId = toId,
+        returnSecret = returnSecret
+    )
+)
+//): ChannelKeys = ChannelKeys(getVerusEncryptionAddress(seed, spendingKey, hdIndex, encryptionIndex, fromId, toId, returnSecret))
+
+fun Derivation.encryptVerusData(
+    address: ByteArray,
+    data: ByteArray,
+    returnSsk: Boolean
+): EncryptedPayload  = EncryptedPayload(encryptVerusDataD(address, data, returnSsk))
+
+
+fun Derivation.decryptVerusData(
+    ivkBytes: ByteArray?,
+    ephemeralPublicKeyBytes: ByteArray?,
+    dataToDecrypt: ByteArray,
+    symmetricKeyBytes: ByteArray?
+): DecryptedData = DecryptedData(decryptVerusDataD(ivkBytes, ephemeralPublicKeyBytes, dataToDecrypt, symmetricKeyBytes))
+

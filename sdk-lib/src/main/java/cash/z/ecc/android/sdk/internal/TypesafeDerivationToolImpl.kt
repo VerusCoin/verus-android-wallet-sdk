@@ -1,11 +1,17 @@
 package cash.z.ecc.android.sdk.internal
 
 import cash.z.ecc.android.sdk.model.Account
+import cash.z.ecc.android.sdk.model.DecryptedData
+import cash.z.ecc.android.sdk.model.EphemeralPublicKey
+import cash.z.ecc.android.sdk.model.EncryptedPayload
 import cash.z.ecc.android.sdk.model.UnifiedFullViewingKey
 import cash.z.ecc.android.sdk.model.UnifiedSpendingKey
 import cash.z.ecc.android.sdk.model.ShieldedSpendingKey
+import cash.z.ecc.android.sdk.model.SharedSecret
+import cash.z.ecc.android.sdk.model.ChannelKeys
 import cash.z.ecc.android.sdk.model.ZcashNetwork
 import cash.z.ecc.android.sdk.tool.DerivationTool
+import cash.z.ecc.android.sdk.internal.ext.Hex
 
 internal class TypesafeDerivationToolImpl(private val derivation: Derivation) : DerivationTool {
     override suspend fun deriveUnifiedFullViewingKeys(
@@ -67,4 +73,50 @@ internal class TypesafeDerivationToolImpl(private val derivation: Derivation) : 
         address: String,
         network: ZcashNetwork
     ): Boolean = derivation.isValidShieldedAddress(address, network)
+
+    override suspend fun getSymmetricKey(
+        viewingKey: String,
+        ephemeralPublicKey: ByteArray,
+        network: ZcashNetwork
+    ): String = derivation.getSymmetricKey(viewingKey, ephemeralPublicKey, network)
+
+    override suspend fun generateSymmetricKey(
+        saplingAddress: String,
+        network: ZcashNetwork
+    ): String = derivation.generateSymmetricKey(saplingAddress, network)
+
+    //TODO: remove this entirely, not used and only partially implemented.
+    // Biz strictly built this (partially) to get Artist started
+    override suspend fun getEncryptionAddress(
+        seed: ByteArray,
+        fromId: ByteArray,
+        toId: ByteArray,
+        accountIndex: Int,
+        network: ZcashNetwork
+    ): String = derivation.getEncryptionAddress(seed, fromId, toId, accountIndex, network)
+
+    override suspend fun getVerusEncryptionAddress(
+        seed: ByteArray?,
+        spendingKey: ByteArray?,
+        fromId: ByteArray?,
+        toId: ByteArray?,
+        hdIndex: Int,
+        encryptionIndex: Int,
+        returnSecret: Boolean
+    ): ChannelKeys = ChannelKeys(derivation.getVerusEncryptionAddress(seed, spendingKey, hdIndex, encryptionIndex, fromId, toId, returnSecret))
+
+    override suspend fun encryptVerusData(
+        address: ByteArray,
+        encryptedData: ByteArray,
+        returnSsk: Boolean
+    ): EncryptedPayload = EncryptedPayload(derivation.encryptVerusDataD(address, encryptedData, returnSsk))
+
+
+    override suspend fun decryptVerusData(
+        ivkBytes: ByteArray?,
+        ephemeralPublicKeyBytes: ByteArray?,
+        encryptedData: ByteArray,
+        symmetricKeyBytes: ByteArray?
+    ): DecryptedData = DecryptedData(derivation.decryptVerusDataD(ivkBytes, ephemeralPublicKeyBytes, encryptedData, symmetricKeyBytes))
+    
 }

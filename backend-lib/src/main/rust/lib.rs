@@ -4,21 +4,31 @@ use std::num::NonZeroU32;
 use std::panic;
 use std::path::Path;
 use std::ptr;
+use sapling::PaymentAddress;
+//use tracing::warn;
+
+use rand::rngs::OsRng;
 
 use anyhow::anyhow;
 use jni::objects::{JByteArray, JObject, JObjectArray, JValue};
 use jni::{
     objects::{JClass, JString},
-    sys::{jboolean, jbyteArray, jint, jlong, jobject, jobjectArray, jstring, JNI_FALSE, JNI_TRUE},
+    sys::{jboolean, jbyte, jbyteArray, jint, jlong, jobject, jobjectArray, jstring, JNI_FALSE, JNI_TRUE},
     JNIEnv,
 };
 use prost::Message;
 use sapling::zip32::ExtendedSpendingKey;
-use secrecy::{ExposeSecret, SecretVec};
+use secrecy::{ExposeSecret, SecretVec, Secret};
 use tracing::{debug, error};
 use tracing_subscriber::prelude::*;
 use tracing_subscriber::reload;
 use zcash_address::{ToAddress, ZcashAddress};
+use verus_zfunc::{
+        z_getencryptionaddress,
+        encrypt_data,
+        decrypt_data,
+ };
+//use chacha20poly1305::{ChaCha20Poly1305, KeyInit, AeadInPlace, Key};
 
 #[cfg(feature = "transparent-inputs")]
 use zcash_client_backend::{
@@ -88,9 +98,22 @@ use zcash_primitives::{
 };
 use zcash_proofs::prover::LocalTxProver;
 
+use zcash_note_encryption::{ Domain, EphemeralKeyBytes };
+use sapling::note_encryption::{ PreparedIncomingViewingKey, SaplingDomain};
+use jubjub::Fr;
+use sapling::{ Note, Rseed };
+use sapling::value::NoteValue;
+
+//use sha2::{Sha256, Digest};
+
+use crate::zip32::Scope;
+
 use crate::utils::{catch_unwind, exception::unwrap_exc_or};
 
 mod utils;
+
+//TODO: move this constant into librustzcash
+const HASH160_BYTE_LEN: usize = 20;
 
 const ANCHOR_OFFSET_U32: u32 = 10;
 const ANCHOR_OFFSET: NonZeroU32 = unsafe { NonZeroU32::new_unchecked(ANCHOR_OFFSET_U32) };
@@ -132,6 +155,25 @@ fn account_id_from_jint(account: jint) -> anyhow::Result<zip32::AccountId> {
         .map_err(|_| ())
         .and_then(|id| zip32::AccountId::try_from(id).map_err(|_| ()))
         .map_err(|_| anyhow!("Invalid account ID"))
+}
+
+// JNI won't let us handle the JByteArray directly into a fixed-size array, using helper functions only. The single-copy functions they
+// provide all require heap allocated memory.  This keeps memory allocs out of heap, and results in a single copy. Using the helper functions,
+// i.e. env.convert_byte_array, we are forced to either create 2 copies, or forced into heap allocation
+fn single_copy_read_ext_key(env: &mut JNIEnv<'_>, arr: &JByteArray<'_>) -> anyhow::Result<Secret<[u8; 169]>> {
+    let len = env.get_array_length(arr)?;
+    if len != 169 {
+        anyhow::bail!("spending_key must be 169 bytes, got {}", len);
+    }
+
+    let mut out = [0u8; 169];
+    env.get_byte_array_region(
+        arr,
+        0,
+        unsafe { std::slice::from_raw_parts_mut(out.as_mut_ptr() as *mut jbyte, 169) },
+    )?;
+
+    Ok(Secret::new(out))
 }
 
 fn account_id_from_jni<'local, P: Parameters>(
@@ -325,6 +367,80 @@ fn encode_extsk<'a>(
     )
 }
 
+pub fn encode_channel_keys<'a>(
+    env: &mut JNIEnv<'a>,
+    //address: &PaymentAddress, // TODO: (Biz) do we need this as bytes in return functiion? 
+    address: &String,
+    extfvk_bytes: &Secret<[u8; 169]>,
+    spending_key_bytes: Option<&Secret<[u8; 169]>>,
+    ivk_bytes: &Secret<[u8; 32]>,
+) -> jni::errors::Result<JObject<'a>> {
+
+    let address_java = env.new_string(address)?;
+    //let address_java = env.byte_array_from_slice(&address.to_bytes())?;
+
+    let fvk_java = env.byte_array_from_slice(extfvk_bytes.expose_secret().as_slice())?;
+
+    let ivk_java = env.byte_array_from_slice(ivk_bytes.expose_secret().as_slice())?;
+
+    let sk_java = match spending_key_bytes {
+        Some(sk) => env.byte_array_from_slice(&sk.expose_secret().as_slice())?.into(),
+        None => JObject::null(),
+    };
+
+    Ok(env.new_object(
+        "cash/z/ecc/android/sdk/internal/model/JniChannelKeys",
+        "(Ljava/lang/String;[B[B[B)V",
+        &[
+            JValue::Object(&address_java),
+            JValue::Object(&fvk_java),
+            JValue::Object(&ivk_java),
+            JValue::Object(&sk_java),
+        ],
+    )?)
+}
+
+pub fn encode_decrypted_data<'a>(
+    env: &mut JNIEnv<'a>,
+    decrypted_data: &[u8],
+) -> jni::errors::Result<JObject<'a>> {
+    let decrypted_data_java = env.byte_array_from_slice(decrypted_data)?;
+    Ok(env.new_object(
+        "cash/z/ecc/android/sdk/internal/model/JniDecryptedData",
+        "([B)V",
+        &[
+            JValue::Object(&decrypted_data_java),
+        ],
+    )?)
+}
+
+pub fn encode_encrypted_payload<'a>(
+    env: &mut JNIEnv<'a>,
+    ephemeral_public_key_bytes: &[u8; 32],
+    encrypted_data_bytes: &[u8],
+    symmetric_key_bytes: Option<&Secret<[u8; 32]>>,
+) -> jni::errors::Result<JObject<'a>> {
+
+    let epk_java = env.byte_array_from_slice(ephemeral_public_key_bytes)?;
+
+    let encrypted_data_java = env.byte_array_from_slice(encrypted_data_bytes)?;
+
+    let ssk_java = match symmetric_key_bytes {
+        Some(ssk) => env.byte_array_from_slice(&ssk.expose_secret().as_slice())?.into(),
+        None => JObject::null(),
+    };
+
+    Ok(env.new_object(
+        "cash/z/ecc/android/sdk/internal/model/JniEncryptedPayload",
+        "([B[B[B)V",
+        &[
+            JValue::Object(&epk_java),
+            JValue::Object(&encrypted_data_java),
+            JValue::Object(&ssk_java),
+        ],
+    )?)
+}
+
 fn decode_usk(env: &JNIEnv, usk: JByteArray) -> anyhow::Result<UnifiedSpendingKey> {
     let usk_bytes = SecretVec::new(env.convert_byte_array(usk).unwrap());
 
@@ -419,6 +535,7 @@ pub extern "C" fn Java_cash_z_ecc_android_sdk_internal_jni_RustBackend_createAcc
     });
     unwrap_exc_or(&mut env, res, ptr::null_mut())
 }
+
 
 /// Checks whether the given seed is relevant to any of the derived accounts in the wallet.
 #[no_mangle]
@@ -779,6 +896,265 @@ pub extern "C" fn Java_cash_z_ecc_android_sdk_internal_jni_RustDerivationTool_de
 }
 
 #[no_mangle]
+pub extern "C" fn Java_cash_z_ecc_android_sdk_internal_jni_RustDerivationTool_getSymmetricKeyReceiver<
+    'local,
+>(
+    mut env: JNIEnv<'local>,
+    _: JClass<'local>,
+    ufvk_string: JString<'local>,
+    ephemeral_pk_jbytes: JByteArray<'local>,
+    network_id: jint,
+) -> jstring {
+    let res = catch_unwind(&mut env, |env| {
+        let _span = tracing::info_span!("RustDerivationTool.GetSymmetricKeyReceiver").entered();
+        let network = parse_network(network_id as u32)?;
+        let ufvk_string = utils::java_string_to_rust(env, &ufvk_string);
+        let ufvk = match UnifiedFullViewingKey::decode(&network, &ufvk_string) {
+            Ok(ufvk) => ufvk,
+            Err(e) => {
+                return Err(anyhow!(
+                    "Error while deriving viewing key from string input: {}",
+                    e,
+                ));
+            }
+        };
+
+        let sapling_dfvk = ufvk.sapling().expect("Sapling key is present").clone();
+        let sapling_ivk = PreparedIncomingViewingKey::new(&sapling_dfvk.to_ivk(Scope::External));
+        //warn!("sapling_ivk: {:?}", sapling_ivk);
+
+        let epk_array: [u8; 32] = env.convert_byte_array(ephemeral_pk_jbytes)?.try_into().unwrap();
+        //warn!("epk_array: {:?}", epk_array);
+        let epk_bytes = EphemeralKeyBytes::from(epk_array);
+        //warn!("epk_bytes: {:?}", epk_bytes);
+
+        let epk = match <SaplingDomain as Domain>::epk(&epk_bytes) {
+            Some(epk) => epk,
+            None => { 
+                return Err(anyhow!(
+                    "Unable to convert EphemeralKeyBytes to EphemeralPublicKey!"
+                ));
+            }
+        };
+
+        let prepared_epk = <SaplingDomain as Domain>::prepare_epk(epk);
+        let shared_secret = <SaplingDomain as Domain>::ka_agree_dec(&sapling_ivk, &prepared_epk);
+        //warn!("shared_secret: {:?}", shared_secret);
+
+        let symmetric_key = <SaplingDomain as Domain>::kdf(shared_secret, &epk_bytes).to_hex();
+        //warn!("symmetric_key: {:?}", symmetric_key);
+        let output = env
+            .new_string(symmetric_key)
+            .expect("Couldn't create Java string!");
+            
+        Ok(output.into_raw())
+    });
+    unwrap_exc_or(&mut env, res, ptr::null_mut())
+}
+
+#[no_mangle]
+pub extern "C" fn Java_cash_z_ecc_android_sdk_internal_jni_RustDerivationTool_generateSymmetricKeySender<
+    'local,
+>(
+    mut env: JNIEnv<'local>,
+    _: JClass<'local>,
+    sapling_address: JString<'local>,
+    network_id: jint,
+) -> jstring {
+    let res = catch_unwind(&mut env, |env| {
+        let _span = tracing::info_span!("RustDerivationTool.generateSymmetricKeySender").entered();
+        let network = parse_network(network_id as u32)?;
+        let addr = utils::java_string_to_rust(env, &sapling_address);
+        let recipient = match Address::decode(&network, &addr) {
+            Some(addr) => match addr {
+                Address::Sapling(addr) => addr,
+                // reject everything except saplingAddresses
+                _ => return Err(anyhow!("Incompatible Address used in generateSymmetricKeySender!"))
+            },
+            None => return Err(anyhow!("Address is for the wrong network")),
+        };
+
+       let mut rng = OsRng;
+        
+        let buf = [0; 64];
+        let rseed_bytes = Fr::from_bytes_wide(&buf);
+        let rseed = Rseed::BeforeZip212(rseed_bytes);
+
+       //TODO: see if there's a clearer way to expose this function, that doesn't require empty note construction
+       let note = Note::from_parts(recipient, NoteValue::ZERO, rseed);
+       let esk = note.generate_or_derive_esk(&mut rng);
+
+       //warn!("esk {:?}, rseed{:?}", esk, rseed);
+
+        let epk = <SaplingDomain as Domain>::ka_derive_public_from_recipient(&recipient, &esk);
+        let epk_bytes = <SaplingDomain as Domain>::epk_bytes(&epk);
+        //warn!("epk: {:?}, epk_bytes {:?}", epk, epk_bytes);
+
+        let pk_d = recipient.pk_d();
+        let shared_secret = <SaplingDomain as Domain>::ka_agree_enc(&esk, &pk_d);
+        //warn!("shared_secret: {:?}", shared_secret);
+        let symmetric_key = <SaplingDomain as Domain>::kdf(shared_secret, &epk_bytes).to_hex();
+        //warn!("symmetric_key: {:?}", symmetric_key);
+        let output = env
+            .new_string(symmetric_key)
+            .expect("Couldn't create Java string!");
+            
+        Ok(output.into_raw())
+    });
+    unwrap_exc_or(&mut env, res, ptr::null_mut())
+}
+
+#[no_mangle]
+#[allow(non_snake_case)]
+pub extern "C" fn Java_cash_z_ecc_android_sdk_internal_jni_RustDerivationTool_zGetEncryptionAddress<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JObject<'local>,
+    seed: JByteArray<'local>,
+    spending_key: JByteArray<'local>,
+    hd_index: jint,
+    encryption_index: jint,
+    from_id: JByteArray<'local>,
+    to_id: JByteArray<'local>,
+    return_secret: jboolean,
+) -> jobject {
+    let res = catch_unwind(&mut env, |env| {
+        let _span = tracing::info_span!("RustDerivationTool.getVerusEncryptionAddress").entered();
+        if hd_index < -1 {
+            // -1 is valid here, because we pass this through as sentinel for None conversion, when we do not have 
+            // a meaningful index scenario (i.e. extsk-based derivation carries hdIndex with it inherently)
+            return Err(anyhow!("Invalid hd_index value! expected >= -1, actual {:?}", hd_index));
+        }
+        if encryption_index < 0 {
+            // conversely, -1 is not a valid argument here. encryption index is always meaningful in all contexts
+            return Err(anyhow!("Invalid hd_index value! expected >= -1, actual {:?}", hd_index));
+        }
+        let seed = if seed.is_null() { None } else { Some(SecretVec::new(env.convert_byte_array(seed)?.into())) };
+        let spending_key = if spending_key.is_null() { None } else { Some(single_copy_read_ext_key(env, &spending_key)?) };
+        let hd_index = if hd_index == -1 { None } else { Some(hd_index as u32) };   
+        let encryption_index = encryption_index as u32;
+        let return_secret = { return_secret == JNI_TRUE };
+
+        let from_id_bytes: Option<[u8; HASH160_BYTE_LEN]> = if from_id.is_null() { None } else {
+            let v = env.convert_byte_array(from_id)?;
+            if v.len() != HASH160_BYTE_LEN {
+                return Err(anyhow!("Invalid length of from_id provided, must be 20 bytes exactly. actual: {}", v.len()));
+            }
+            let mut arr = [0u8; HASH160_BYTE_LEN];
+            arr.copy_from_slice(&v);
+            Some(arr)
+        };
+
+        let to_id_bytes: Option<[u8; HASH160_BYTE_LEN]> = if to_id.is_null() { None } else {
+            let v = env.convert_byte_array(to_id)?;
+            if v.len() != HASH160_BYTE_LEN {
+                return Err(anyhow!(
+                    "Invalid length of to_id provided, must be 20 bytes exactly. actual: {}", v.len()));
+            }
+            let mut arr = [0u8; HASH160_BYTE_LEN];
+            arr.copy_from_slice(&v);
+            Some(arr)
+        };
+
+        // this is the pure rust function in 'verus_zfunc' crate
+        let channel_keys = z_getencryptionaddress(seed.as_ref(), spending_key.as_ref(), hd_index, encryption_index, from_id_bytes.as_ref(), to_id_bytes.as_ref(), return_secret)
+            .map_err(|e| anyhow!("z_getencryptionaddress failed: {}", e))?;
+        
+        let result = encode_channel_keys(
+            env,
+            &channel_keys.address,
+            &channel_keys.extfvk_bytes,          
+            channel_keys.spending_key_bytes.as_ref(),
+            &channel_keys.ivk_bytes,
+        )?;
+        Ok(result.into_raw())
+    });
+    unwrap_exc_or(&mut env, res, std::ptr::null_mut())
+}
+
+#[no_mangle]
+pub extern "C" fn Java_cash_z_ecc_android_sdk_internal_jni_RustDerivationTool_encryptVData<'local>(
+        mut env: JNIEnv<'local>,
+        _class: JObject<'local>,
+        address_bytes: JByteArray,
+        data_to_encrypt: JByteArray,
+        return_ssk: jboolean,
+    ) -> jobject {
+    let res = catch_unwind(&mut env, |env| {
+        
+        let _span = tracing::info_span!("RustDerivationTool.encryptVerusData").entered();
+
+        // convert 43 bytes directly to PaymentAddress - no bech32 round trip
+        let addr_bytes: [u8; 43] = env.convert_byte_array(&address_bytes)?
+            .try_into()
+            .map_err(|_| anyhow!("Address must be exactly 43 bytes"))?;
+
+        let payment_address = PaymentAddress::from_bytes(&addr_bytes)
+            .ok_or_else(|| anyhow!("Invalid PaymentAddress bytes"))?;
+        
+        let rust_data = SecretVec::new(env.convert_byte_array(&data_to_encrypt)?);
+        let rust_return_ssk = return_ssk == JNI_TRUE;
+
+        // only reference of unencrypted data
+        let encrypted_payload = encrypt_data(&payment_address, &rust_data, rust_return_ssk)
+            .map_err(|e| anyhow!("encrypt_data failed: {}", e))?;
+
+        let result = encode_encrypted_payload(
+            env,
+            &encrypted_payload.ephemeral_public_key, 
+            &encrypted_payload.encrypted_data,
+            encrypted_payload.symmetric_key.as_ref())?;
+
+        Ok(result.into_raw())
+    });
+
+    unwrap_exc_or(&mut env, res, std::ptr::null_mut())
+}
+
+#[no_mangle]
+pub extern "C" fn Java_cash_z_ecc_android_sdk_internal_jni_RustDerivationTool_decryptVData<'local>(
+        mut env: JNIEnv<'local>,
+        _class: JObject<'local>,
+        ivk_bytes: JByteArray<'local>,
+        ephemeral_public_key_hex: JByteArray<'local>,
+        data_bytes: JByteArray<'local>,            
+        symmetric_key_hex: JByteArray<'local>,          
+    ) -> jbyteArray {
+    let res = catch_unwind(&mut env, |env| {
+        
+        let _span = tracing::info_span!("RustDerivationTool.decryptVerusDataD").entered();
+
+        let ivk: Option<Secret<[u8; 32]>> = if ivk_bytes.is_null() { None } else {
+            let arr: [u8; 32] = env.convert_byte_array(&ivk_bytes)?
+                .try_into()
+                .map_err(|_| anyhow!("ivk_bytes must be exactly 32 bytes"))?;
+            Some(Secret::new(arr))
+        };
+        
+        let epk: Option<[u8; 32]> = if ephemeral_public_key_hex.is_null() { None } else {
+            Some(env.convert_byte_array(&ephemeral_public_key_hex)?
+                .try_into()
+                .map_err(|_| anyhow!("epk must be exactly 32 bytes"))?)  
+        };
+        let ssk: Option<Secret<[u8; 32]>> = if symmetric_key_hex.is_null() { None } else {
+            let arr: [u8; 32] = env.convert_byte_array(&symmetric_key_hex)?
+                .try_into()
+                .map_err(|_| anyhow!("ssk must be exactly 32 bytes"))?;
+            Some(Secret::new(arr))
+        };
+
+        let data_to_decrypt = SecretVec::new(env.convert_byte_array(data_bytes)?);
+
+        let decrypted = decrypt_data(ivk.as_ref(), epk.as_ref(), &data_to_decrypt, ssk.as_ref())
+                    .map_err(|e| anyhow!("decrypt failed: {}", e))?;
+
+        let output = encode_decrypted_data(env, &decrypted.expose_secret().as_slice())?;
+        Ok(output.into_raw())
+    });
+
+    unwrap_exc_or(&mut env, res, std::ptr::null_mut())
+}
+
+#[no_mangle]
 pub extern "C" fn Java_cash_z_ecc_android_sdk_internal_jni_RustBackend_getCurrentAddress<'local>(
     mut env: JNIEnv<'local>,
     _: JClass<'local>,
@@ -947,9 +1323,14 @@ pub extern "C" fn Java_cash_z_ecc_android_sdk_internal_jni_RustDerivationTool_is
         let network = parse_network(network_id as u32)?;
         let addr = utils::java_string_to_rust(env, &addr);
 
+        //warn!("isValidAddress: address({:?}", addr);
+
         match Address::decode(&network, &addr) {
             Some(addr) => match addr {
-                Address::Sapling(_) => Ok(JNI_TRUE),
+                Address::Sapling(_) => {
+                    //warn!("address::sapling condition hit!");
+                    Ok(JNI_TRUE)
+                },
                 Address::Transparent(_) | Address::Unified(_) => Ok(JNI_FALSE),
             },
             None => Err(anyhow!("Address is for the wrong network")),

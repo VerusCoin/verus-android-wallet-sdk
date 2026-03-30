@@ -77,27 +77,6 @@ class RustDerivationTool private constructor() : Derivation {
         networkId: Int
     ): String = deriveUnifiedAddressFromViewingKey(viewingKey, networkId = networkId)
 
-    override fun getSymmetricKey(
-        viewingKey: String, 
-        ephemeralPublicKey: ByteArray,
-        networkId: Int
-    ): String =  getSymmetricKeyReceiver(viewingKey, ephemeralPublicKey, networkId = networkId)
-
-    override fun generateSymmetricKey(
-        saplingAddress: String,
-        networkId: Int
-    ): String =  generateSymmetricKeySender(saplingAddress, networkId = networkId)
-
-    override fun getEncryptionAddress(
-        seed: ByteArray,
-        fromId: ByteArray,
-        toId: ByteArray,
-        accountIndex: Int,
-        networkId: Int
-    ): String {
-        TODO("Legacy getEncryptionAddress is not supported. Use getVerusEncryptionAddress instead.")
-    }
-
     override fun getVerusEncryptionAddress(
         seed: ByteArray?,
         spendingKey: ByteArray?,
@@ -109,7 +88,7 @@ class RustDerivationTool private constructor() : Derivation {
     ): JniChannelKeys = zGetEncryptionAddress(seed, spendingKey, hdIndex, encryptionIndex, fromId, toId, returnSecret)
 
     override fun encryptVerusDataD(
-        addressBytes: ByteArray, // This can be a byte array, is of type  SaplingPaymentAddress in encryptResponseToAddress, we can use fromBuffer method
+        addressBytes: ByteArray,
         data: ByteArray,
         returnSsk: Boolean
     ): JniEncryptedPayload = encryptVData(addressBytes, data, returnSsk)
@@ -190,19 +169,6 @@ class RustDerivationTool private constructor() : Derivation {
         ): Boolean
 
         @JvmStatic
-        private external fun getSymmetricKeyReceiver(
-            vk: String,
-            epk: ByteArray,
-            networkId: Int
-        ): String
-
-        @JvmStatic
-        private external fun generateSymmetricKeySender(
-            saplingAddress: String,
-            networkId: Int
-        ): String
-
-        @JvmStatic
         private external fun zGetEncryptionAddress(
             seed: ByteArray?,
             spendingKey: ByteArray?,
@@ -224,7 +190,7 @@ class RustDerivationTool private constructor() : Derivation {
         private external fun decryptVData(
             ivkBytes: ByteArray?,
             ephemeralPublicKeyBytes: ByteArray?,
-            encyptedData: ByteArray,
+            encryptedData: ByteArray,
             symmetricKeyBytes: ByteArray?
         ): JniDecryptedData
     }

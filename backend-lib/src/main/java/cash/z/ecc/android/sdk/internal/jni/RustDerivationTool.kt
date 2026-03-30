@@ -190,7 +190,7 @@ class RustDerivationTool private constructor() : Derivation {
         private external fun decryptVData(
             ivkBytes: ByteArray?,
             ephemeralPublicKeyBytes: ByteArray?,
-            encyptedData: ByteArray,
+            encryptedData: ByteArray,
             symmetricKeyBytes: ByteArray?
         ): JniDecryptedData
     }

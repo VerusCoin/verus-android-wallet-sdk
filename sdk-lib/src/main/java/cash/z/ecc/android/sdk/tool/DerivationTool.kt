@@ -12,7 +12,6 @@ import cash.z.ecc.android.sdk.model.EphemeralPublicKey
 import cash.z.ecc.android.sdk.model.UnifiedFullViewingKey
 import cash.z.ecc.android.sdk.model.UnifiedSpendingKey
 import cash.z.ecc.android.sdk.model.ShieldedSpendingKey
-import cash.z.ecc.android.sdk.model.SharedSecret
 import cash.z.ecc.android.sdk.model.ZcashNetwork
 interface DerivationTool {
     /**
@@ -135,25 +134,6 @@ interface DerivationTool {
         address: String,
         network: ZcashNetwork
     ): Boolean
-
-    suspend fun getSymmetricKey(
-        viewingKey: String,
-        ephemeralPublicKey: ByteArray,
-        network: ZcashNetwork
-    ): String
-
-    suspend fun generateSymmetricKey(
-        saplingAddress: String,
-        network: ZcashNetwork
-    ): String
-
-    suspend fun getEncryptionAddress(
-        seed: ByteArray,
-        fromId: ByteArray,
-        toId: ByteArray,
-        accountIndex: Int,
-        network: ZcashNetwork
-    ): String
 
     /**
      * Derives a deterministic z-address for encrypted messaging between two parties. This is a Verus-specific feature.

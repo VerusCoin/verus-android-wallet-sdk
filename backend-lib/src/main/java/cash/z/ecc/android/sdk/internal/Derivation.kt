@@ -67,25 +67,6 @@ interface Derivation {
         networkId: Int
     ): Boolean
 
-    fun getSymmetricKey(
-        viewingKey: String,
-        ephemeralPublicKey: ByteArray,
-        networkId: Int
-    ): String
-
-    fun generateSymmetricKey(
-        saplingAddress: String,
-        networkId: Int
-    ): String
-
-    fun getEncryptionAddress(
-        seed: ByteArray,
-        fromId: ByteArray,
-        toId: ByteArray,
-        accountIndex: Int,
-        networkId: Int
-    ): String
-
     fun getVerusEncryptionAddress(
         seed: ByteArray?,
         spendingKey: ByteArray?,
@@ -95,7 +76,6 @@ interface Derivation {
         toId: ByteArray?,
         returnSecret: Boolean
     ): JniChannelKeys
-
 
     fun encryptVerusDataD(
         addressBytes: ByteArray,
